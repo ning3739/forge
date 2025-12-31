@@ -1,0 +1,26 @@
+[project]
+name = "forge"
+version = "0.1.0"
+description = "FastAPI脚手架CLI工具"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "typer>=0.21.0",
+    "rich>=14.0.0",
+    "requests>=2.31.0",
+    "questionary>=1.10.0"
+]
+
+[project.scripts]
+forge = "main:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["commands", "core", "ui"]
+py-modules = ["main"]
+
+[tool.uv.workspace]
+members = []

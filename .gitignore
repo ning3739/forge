@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.pyo
+*.pyd
+*.pdb
+*.log
+*.pot
+*.mo
+*.db
+*.sqlite3
+*.env
+.env
+.venv
+venv/
+ENV/
+.envrc
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VS Code
+.vscode/
+
+# Test and coverage
+.coverage
+.tox/
+.nox/
+.pytest_cache/
+htmlcov/
+
+# Installer logs
+debug.log
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Others
+*.swp
+*~
+.idea/
+*.bak
+*.tmp
+*.orig
+*.rej
+
+# Typer/uv
+.uv/
