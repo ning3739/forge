@@ -2,7 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.0] - 2026-01-05
+## [0.1.1] - 2025-01-06
+
+### Added
+- Python 3.13 support in CI and package metadata
+- Link to CHANGELOG in README
+- PyPI publishing automation via GitHub Actions
+
+### Changed
+- Updated documentation for PyPI publishing
+- Improved README structure and clarity
+- Removed `.github/README.md` to fix GitHub display
+
+### Fixed
+- Removed incorrect test command from development setup
+- Fixed package URLs in workflow files
+- Updated all documentation to use correct package name `ningfastforge`
+
+## [0.1.0] - 2025-01-05
 
 ### Added
 - Initial release of Forge CLI

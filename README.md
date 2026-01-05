@@ -313,9 +313,32 @@ uv sync
 ./scripts/test_build.sh
 ```
 
-### Publishing
+## Publishing
 
-See [PUBLISHING.md](PUBLISHING.md) for detailed instructions on publishing to PyPI.
+### Automated Release Process
+
+The project uses automated publishing via GitHub Actions:
+
+1. **Update version** in `pyproject.toml`
+2. **Update** `CHANGELOG.md` with changes
+3. **Commit and push**:
+   ```bash
+   git add pyproject.toml CHANGELOG.md
+   git commit -m "Bump version to 0.1.1"
+   git push
+   ```
+4. **Create and push tag**:
+   ```bash
+   git tag v0.1.1
+   git push origin v0.1.1
+   ```
+5. **Automatic process**:
+   - ✅ CI tests run on all Python versions
+   - ✅ Package is built and validated
+   - ✅ Published to PyPI automatically
+   - ✅ GitHub Release is created
+
+See [PUBLISHING.md](PUBLISHING.md) for detailed instructions.
 
 ## 📝 License
 
