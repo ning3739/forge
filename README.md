@@ -303,14 +303,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/forge.git
+git clone https://github.com/ning3739/forge.git
 cd forge
 
 # Install dependencies
 uv sync
-
-# Run tests (if available)
-pytest
 
 # Test build
 ./scripts/test_build.sh
@@ -323,6 +320,10 @@ See [PUBLISHING.md](PUBLISHING.md) for detailed instructions on publishing to Py
 ## 📝 License
 
 MIT License
+
+## �  Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 ## 🙏 Acknowledgments
 
