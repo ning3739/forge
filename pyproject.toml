@@ -1,12 +1,12 @@
 [project]
-name = "forge-fastapi"
+name = "ningfastforge"
 version = "0.1.0"
 description = "A modern FastAPI project scaffolding CLI tool"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Ning", email = "ning3739@gmail.com"}
 ]
 keywords = ["fastapi", "cli", "scaffolding", "generator", "template"]
 classifiers = [
@@ -29,10 +29,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/forge"
-Documentation = "https://github.com/yourusername/forge#readme"
-Repository = "https://github.com/yourusername/forge"
-Issues = "https://github.com/yourusername/forge/issues"
+Homepage = "https://github.com/ning3739/forge"
+Documentation = "https://github.com/ning3739/forge#readme"
+Repository = "https://github.com/ning3739/forge"
+Issues = "https://github.com/ning3739/forge/issues"
 
 [project.scripts]
 forge = "main:main"

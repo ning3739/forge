@@ -28,14 +28,14 @@ Forge is a powerful command-line tool that helps you quickly bootstrap productio
 #### From PyPI (Recommended)
 
 ```bash
-pip install forge-fastapi
+pip install ningfastforge
 ```
 
 #### From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/forge.git
+git clone https://github.com/ning3739/forge.git
 cd forge
 
 # Install with uv (recommended)

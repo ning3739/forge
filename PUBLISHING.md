@@ -68,16 +68,16 @@ Edit `pyproject.toml`:
 
 ```toml
 [project]
-name = "forge-fastapi"  # ⚠️ Must be unique on PyPI
+name = "ningfastforge"  # ⚠️ Must be unique on PyPI
 version = "0.1.0"       # ⚠️ Update for each release
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}  # ⚠️ Update
+    {name = "Ning", email = "ning3739@gmail.com"}  # ⚠️ Update
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/forge"      # ⚠️ Update
-Repository = "https://github.com/yourusername/forge"    # ⚠️ Update
-Issues = "https://github.com/yourusername/forge/issues" # ⚠️ Update
+Homepage = "https://github.com/ning3739/forge"      # ⚠️ Update
+Repository = "https://github.com/ning3739/forge"    # ⚠️ Update
+Issues = "https://github.com/ning3739/forge/issues" # ⚠️ Update
 ```
 
 ### Step 2: Update LICENSE
@@ -107,12 +107,12 @@ Your Repository:
 ├── .github/
 │   └── workflows/
 │       └── publish.yml  ← Workflow name: "publish.yml"
-├── pyproject.toml       ← Package name: "forge-fastapi"
+├── pyproject.toml       ← Package name: "ningfastforge"
 └── ...
 
 PyPI Form Fields:
 ┌─────────────────────────────────────────┐
-│ PyPI Project Name: forge-fastapi        │ ← from pyproject.toml
+│ PyPI Project Name: ningfastforge        │ ← from pyproject.toml
 │ Owner: yourusername                     │ ← your GitHub username
 │ Repository name: forge                  │ ← just repo name
 │ Workflow name: publish.yml              │ ← just filename!
@@ -125,9 +125,9 @@ PyPI Form Fields:
 1. Go to: https://pypi.org/manage/account/publishing/
 2. Click **"Add a new pending publisher"**
 3. Fill in the form:
-   - **PyPI Project Name**: `forge-fastapi` (from your `pyproject.toml`)
-   - **Owner**: Your GitHub username (e.g., `yourusername`)
-   - **Repository name**: Your repository name only (e.g., `forge`, NOT the full URL)
+   - **PyPI Project Name**: `ningfastforge` (from your `pyproject.toml`)
+   - **Owner**: `ning3739` (your GitHub username)
+   - **Repository name**: `forge` (just repo name, NOT the full URL)
    - **Workflow name**: `publish.yml` ⚠️ **Just the filename, not the path!**
    - **Environment name**: `pypi` ⚠️ **Must match the workflow file**
 4. Click **"Add"**
@@ -154,8 +154,8 @@ Same steps at https://test.pypi.org/manage/account/publishing/ but use:
 
 **For Production PyPI:**
 ```
-PyPI Project Name:    forge-fastapi
-Owner:                yourusername
+PyPI Project Name:    ningfastforge
+Owner:                ning3739
 Repository name:      forge
 Workflow name:        publish.yml
 Environment name:     pypi
@@ -163,8 +163,8 @@ Environment name:     pypi
 
 **For Test PyPI:**
 ```
-PyPI Project Name:    forge-fastapi
-Owner:                yourusername
+PyPI Project Name:    ningfastforge
+Owner:                ning3739
 Repository name:      forge
 Workflow name:        publish.yml
 Environment name:     testpypi
@@ -194,7 +194,7 @@ Use this checklist before publishing:
 ### Publishing
 - [ ] Pushed all changes to GitHub
 - [ ] Created GitHub Release (or triggered manual workflow)
-- [ ] Verified installation from PyPI: `pip install forge-fastapi`
+- [ ] Verified installation from PyPI: `pip install ningfastforge`
 
 ---
 
@@ -244,7 +244,7 @@ Use this checklist before publishing:
 
 5. **Verify**:
    ```bash
-   pip install forge-fastapi
+   pip install ningfastforge
    forge --version
    ```
 
@@ -270,7 +270,7 @@ Use this checklist before publishing:
    ```bash
    pip install --index-url https://test.pypi.org/simple/ \
                --extra-index-url https://pypi.org/simple/ \
-               forge-fastapi
+               ningfastforge
    forge --version
    ```
 
@@ -411,13 +411,13 @@ pip install dist/*.whl --force-reinstall
 After publishing, add these badges to `README.md`:
 
 ```markdown
-[![PyPI version](https://badge.fury.io/py/forge-fastapi.svg)](https://badge.fury.io/py/forge-fastapi)
-[![Python Versions](https://img.shields.io/pypi/pyversions/forge-fastapi.svg)](https://pypi.org/project/forge-fastapi/)
-[![Downloads](https://pepy.tech/badge/forge-fastapi)](https://pepy.tech/project/forge-fastapi)
+[![PyPI version](https://badge.fury.io/py/ningfastforge.svg)](https://badge.fury.io/py/ningfastforge)
+[![Python Versions](https://img.shields.io/pypi/pyversions/ningfastforge.svg)](https://pypi.org/project/ningfastforge/)
+[![Downloads](https://pepy.tech/badge/ningfastforge)](https://pepy.tech/project/ningfastforge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ```
 
-Replace `forge-fastapi` with your actual package name.
+Replace `ningfastforge` with your actual package name.
 
 ---
 
@@ -433,7 +433,7 @@ Before publishing:
 - [ ] Created GitHub environment (`pypi` or `testpypi`)
 - [ ] Tested on Test PyPI first (recommended)
 - [ ] Created GitHub release with proper tag
-- [ ] Verified installation: `pip install forge-fastapi`
+- [ ] Verified installation: `pip install ningfastforge`
 - [ ] Tested CLI: `forge --version`
 
 ---
