@@ -1,13 +1,13 @@
-"""Email 服务生成器"""
+"""Email servicegenerategenerator"""
 from ..base import BaseTemplateGenerator
 
 
 class EmailServiceGenerator(BaseTemplateGenerator):
-    """Email 服务文件生成器"""
+    """Email serviceFile generator"""
     
     def generate(self) -> None:
-        """生成 email.py 文件"""
-        # 只有 Complete JWT Auth 才生成邮件服务
+        """generate email.py file"""
+        # Only generate email service for Complete JWT Auth
         if self.config_reader.get_auth_type() != "complete":
             return
         

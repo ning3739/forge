@@ -1,4 +1,4 @@
-"""UI组件模块 - 简化版本"""
+"""UI components module - simplified version"""
 from rich.panel import Panel
 from rich.text import Text
 from rich.align import Align
@@ -10,10 +10,10 @@ from ui.colors import get_colors, get_gradients, console
 
 def create_questionary_style() -> questionary.Style:
     """
-    创建统一的 questionary 样式
+    Create unified questionary style
     
     Returns:
-        questionary.Style 对象
+        questionary.Style object
     """
     colors = get_colors()
     return questionary.Style([
@@ -21,11 +21,11 @@ def create_questionary_style() -> questionary.Style:
         ('question', f'bold {colors.text_primary}'),
         ('answer', f'fg:{colors.neon_green} bold'),
         ('pointer', f'fg:{colors.neon_green}'),
-        ('highlighted', f'fg:{colors.neon_green}'),  # 光标所在项，只改字体颜色
-        ('selected', f'fg:{colors.neon_green}'),  # 多选时选中项的标记（圆圈）颜色，无背景
+        ('highlighted', f'fg:{colors.neon_green}'),  # Cursor position item, only change font color
+        ('selected', f'fg:{colors.neon_green}'),  # Multi-select checked item marker (circle) color, no background
         ('separator', f'fg:{colors.muted_dark}'),
         ('instruction', f'fg:{colors.text_muted}'),
-        ('text', f'fg:{colors.text_primary}'),  # 普通文本颜色
+        ('text', f'fg:{colors.text_primary}'),  # Normal text color
         ('disabled', f'fg:{colors.muted_dark} italic')
     ])
 
@@ -37,16 +37,16 @@ def create_highlighted_panel(
     icon: str = "⚡"
 ) -> Panel:
     """
-    创建高亮面板 - 用于重要信息展示
+    Create highlighted panel - for displaying important information
 
     Args:
-        content: 面板内容
-        title: 面板标题
-        accent_color: 强调色
-        icon: 标题图标
+        content: Panel content
+        title: Panel title
+        accent_color: Accent color
+        icon: Title icon
 
     Returns:
-        Panel对象
+        Panel object
     """
     colors = get_colors()
     accent = accent_color or colors.neon_yellow
@@ -65,25 +65,25 @@ def create_gradient_bar(
     style: Literal["default", "rainbow", "neon"] = "default"
 ) -> None:
     """
-    创建渐变分隔条 - 响应式
+    Create gradient separator bar - responsive
 
     Args:
-        style: 样式类型（default, rainbow, neon）
+        style: Style type (default, rainbow, neon)
     """
     colors = get_colors()
     gradients = get_gradients()
     width = console.width
 
-    # 如果屏幕太窄，只显示简单的线
+    # If screen is too narrow, only show simple line
     if width < 20:
         console.print(Text("─" * width, style="dim white"))
         return
 
     bar = Text()
-    # 统一使用粗线字符，保持所有样式粗细一致
+    # Use thick line character uniformly to keep all styles consistent
     char = "━"
 
-    # 根据样式选择颜色列表
+    # Select color list based on style
     if style == "rainbow":
         colors_list = gradients.RAINBOW
     elif style == "neon":
@@ -96,7 +96,7 @@ def create_gradient_bar(
     remaining_chars = width % num_colors
 
     for i, color in enumerate(colors_list):
-        # 将剩余的字符分配给最后一个片段
+        # Distribute remaining characters to the last segment
         current_segment_width = segment_width + (
             remaining_chars if i == num_colors - 1 else 0
         )
@@ -109,7 +109,7 @@ def create_gradient_bar(
     console.print(Align.left(bar))
 
 
-# 导出
+# Exports
 __all__ = [
     "console",
     "create_questionary_style",

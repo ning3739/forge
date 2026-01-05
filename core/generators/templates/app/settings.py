@@ -1,18 +1,18 @@
-"""Settings 配置文件生成器"""
+"""Settings Configuration file generator"""
 from ..base import BaseTemplateGenerator
 
 
 class ConfigSettingsGenerator(BaseTemplateGenerator):
-    """生成 app/core/config/settings.py 文件"""
+    """generate app/core/config/settings.py file"""
     
     def generate(self) -> None:
-        """生成 Settings 配置文件"""
+        """generate Settings configurationfile"""
         imports = ["from functools import cached_property"]
         
-        # 收集所有需要的配置模块
+        # Collect all required configuration modules
         config_modules = []
         
-        # 基础配置（始终包含）
+        # Base configuration (always included)
         config_modules.append({
             "import": "from app.core.config.modules.app import AppSettings",
             "property": "app",
@@ -25,15 +25,14 @@ class ConfigSettingsGenerator(BaseTemplateGenerator):
             "class": "LoggingSettings"
         })
         
-        # 数据库配置（如果启用）
-        if self.config_reader.has_database():
-            config_modules.append({
-                "import": "from app.core.config.modules.database import DatabaseSettings",
-                "property": "database",
-                "class": "DatabaseSettings"
-            })
+        # databaseconfiguration(is nowrequired)
+        config_modules.append({
+            "import": "from app.core.config.modules.database import DatabaseSettings",
+            "property": "database",
+            "class": "DatabaseSettings"
+        })
         
-        # JWT 配置（如果启用认证）
+        # JWT configuration(ifenableauthentication)
         if self.config_reader.has_auth():
             config_modules.append({
                 "import": "from app.core.config.modules.jwt import JWTSettings",
@@ -41,7 +40,7 @@ class ConfigSettingsGenerator(BaseTemplateGenerator):
                 "class": "JWTSettings"
             })
         
-        # Email 配置（如果是 Complete JWT Auth）
+        # Email configuration(ifyes Complete JWT Auth)
         if self.config_reader.get_auth_type() == "complete":
             config_modules.append({
                 "import": "from app.core.config.modules.email import EmailSettings",
@@ -49,7 +48,7 @@ class ConfigSettingsGenerator(BaseTemplateGenerator):
                 "class": "EmailSettings"
             })
         
-        # CORS 配置（如果启用）
+        # CORS configuration(ifenable)
         if self.config_reader.has_cors():
             config_modules.append({
                 "import": "from app.core.config.modules.cors import CORSSettings",
@@ -57,11 +56,11 @@ class ConfigSettingsGenerator(BaseTemplateGenerator):
                 "class": "CORSSettings"
             })
         
-        # 构建导入语句
+        # Build import statements
         for module in config_modules:
             imports.append(module["import"])
         
-        # 构建 Settings 类的属性
+        # Build Settings classattribute
         properties = []
         for module in config_modules:
             property_code = f'''    @cached_property
@@ -69,11 +68,11 @@ class ConfigSettingsGenerator(BaseTemplateGenerator):
         return {module["class"]}()'''
             properties.append(property_code)
         
-        # 构建完整内容
+        # BuildcompleteContent
         content = f'''class Settings:
-    """全局配置类
+    """Global configuration class
     
-    使用 cached_property 延迟加载配置，提高性能
+    Use cached_property for lazy loading configuration, improves performance
     """
 
 {chr(10).join(properties)}
@@ -85,7 +84,7 @@ settings = Settings()
         
         self.file_ops.create_python_file(
             file_path="app/core/config/settings.py",
-            docstring="全局配置管理",
+            docstring="globalconfigurationmanagement",
             imports=imports,
             content=content,
             overwrite=True

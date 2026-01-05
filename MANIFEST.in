@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+recursive-include core *.py
+recursive-include commands *.py
+recursive-include ui *.py
+include main.py

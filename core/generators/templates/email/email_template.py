@@ -1,29 +1,29 @@
-"""Email 模板生成器"""
+"""Email templategenerategenerator"""
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
 class EmailTemplateGenerator(BaseTemplateGenerator):
-    """Email 模板文件生成器"""
+    """Email templateFile generator"""
     
     def generate(self) -> None:
-        """生成邮件模板文件"""
-        # 只有 Complete JWT Auth 才生成邮件模板
+        """generateemailtemplatefile"""
+        # Only generate email template for Complete JWT Auth
         if self.config_reader.get_auth_type() != "complete":
             return
         
-        # 创建模板目录
+        # Create template directory
         template_dir = self.project_path / "static" / "email_template"
         template_dir.mkdir(parents=True, exist_ok=True)
         
-        # 生成各种邮件模板
+        # Generate various email templates
         self._create_verification_template()
         self._create_password_reset_template()
         self._create_welcome_template()
         self._create_base_template()
     
     def _create_base_template(self) -> None:
-        """创建基础邮件模板"""
+        """Createbaseemailtemplate"""
         content = '''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -139,7 +139,7 @@ class EmailTemplateGenerator(BaseTemplateGenerator):
         )
     
     def _create_verification_template(self) -> None:
-        """创建邮箱验证模板"""
+        """CreateEmailValidatetemplate"""
         content = '''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -248,7 +248,7 @@ class EmailTemplateGenerator(BaseTemplateGenerator):
         )
     
     def _create_password_reset_template(self) -> None:
-        """创建密码重置模板"""
+        """CreatePasswordresettemplate"""
         content = '''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -366,7 +366,7 @@ class EmailTemplateGenerator(BaseTemplateGenerator):
         )
     
     def _create_welcome_template(self) -> None:
-        """创建欢迎邮件模板"""
+        """Create welcome email template"""
         content = '''<!DOCTYPE html>
 <html lang="en">
 <head>

@@ -1,1 +1,1 @@
-"""邮件服务生成器"""
+"""Email service generators"""

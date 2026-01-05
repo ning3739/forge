@@ -1,4 +1,4 @@
-"""部署配置生成器模块
+"""Deployment configurationgenerategeneratormodule
 
-此模块包含生成 Docker 和其他部署相关配置的生成器
+Thismodulecontainsgenerate Docker andother deployment-related configurationsgenerategenerator
 """

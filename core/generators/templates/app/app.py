@@ -1,12 +1,12 @@
-"""应用配置文件生成器"""
+"""applicationConfiguration file generator"""
 from ..base import BaseTemplateGenerator
 
 
 class ConfigAppGenerator(BaseTemplateGenerator):
-    """生成 app/core/config/modules/app.py 文件"""
+    """generate app/core/config/modules/app.py file"""
     
     def generate(self) -> None:
-        """生成应用配置文件"""
+        """generateapplicationconfigurationfile"""
         project_name = self.config_reader.get_project_name()
         
         imports = [
@@ -33,7 +33,7 @@ class ConfigAppGenerator(BaseTemplateGenerator):
         
         self.file_ops.create_python_file(
             file_path="app/core/config/modules/app.py",
-            docstring="应用配置模块",
+            docstring="applicationconfigurationmodule",
             imports=imports,
             content=content,
             overwrite=True

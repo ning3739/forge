@@ -1,12 +1,12 @@
-"""配置基类文件生成器"""
+"""configurationbase classFile generator"""
 from ..base import BaseTemplateGenerator
 
 
 class ConfigBaseGenerator(BaseTemplateGenerator):
-    """生成 app/core/config/base.py 文件"""
+    """generate app/core/config/base.py file"""
     
     def generate(self) -> None:
-        """生成配置基类文件"""
+        """generateconfigurationbase classfile"""
         imports = [
             "import os",
             "from pathlib import Path",
@@ -47,7 +47,7 @@ class EnvBaseSettings(BaseSettings):
         
         self.file_ops.create_python_file(
             file_path="app/core/config/base.py",
-            docstring="配置基类 - 所有配置类的基类",
+            docstring="configurationbase class - allconfigurationclassbase class",
             imports=imports,
             content=content,
             overwrite=True

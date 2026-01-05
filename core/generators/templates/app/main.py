@@ -1,13 +1,13 @@
-"""Main.py 生成器"""
+"""Main.py generategenerator"""
 from pathlib import Path
 from .base import BaseTemplateGenerator
 
 
 class MainGenerator(BaseTemplateGenerator):
-    """Main.py 文件生成器"""
+    """Main.py File generator"""
     
     def generate(self) -> None:
-        """生成 main.py 文件"""
+        """generate main.py file"""
         auth_type = self.config_reader.get_auth_type() if self.config_reader.has_auth() else None
         
         if auth_type:
@@ -16,7 +16,7 @@ class MainGenerator(BaseTemplateGenerator):
             self._generate_basic_main()
     
     def _generate_basic_main(self) -> None:
-        """生成基础的 main.py（无认证）"""
+        """generatebase main.py(noneauthentication)"""
         imports = [
             "import os",
             "import uvicorn",
@@ -28,29 +28,24 @@ class MainGenerator(BaseTemplateGenerator):
             "",
             "from app.core.config.settings import settings",
             "from app.core.logger import logger_manager",
+            "from app.core.database import db_manager",  # Database is nowrequired
         ]
         
-        if self.config_reader.has_database():
-            imports.append("from app.core.database import db_manager")
-        
-        content = '''# 创建 LoggerManager 实例
+        content = '''# Create LoggerManager instance
 logger_manager.setup()
 
-# 创建 Logger 实例
+# Create Logger instance
 logger = logger_manager.get_logger(__name__)
 
 
-# 创建生命周期
+# Create lifespan
 async def lifespan(_app: FastAPI):
-    """应用生命周期管理"""
+    """Application lifespan management"""
     logger.info("🚩 Starting the application...")
     logger.info(f"🚧 You are working in {os.getenv('ENV', 'development')} environment")
-    '''
-        
-        if self.config_reader.has_database():
-            content += '''
+    
     try:
-        # 初始化数据库连接
+        # Initializedatabase connection
         await db_manager.initialize()
         logger.info("🎉 Database connections initialized successfully")
         await db_manager.test_connections()
@@ -58,26 +53,21 @@ async def lifespan(_app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Database connection failed: {e}")
         logger.warning("⚠️ Application will start without database connections")
-    '''
-        
-        content += '''
+    
     yield
-    '''
-        
-        if self.config_reader.has_database():
-            content += '''
-    # 关闭数据库连接
+    
+    # closedatabase connection
     try:
         await db_manager.close()
         logger.info("🎉 Database connections closed successfully")
     except Exception as e:
         logger.error(f"❌ Database connection closed failed: {e}")
         logger.warning("⚠️ Database connection closed failed")
-    '''
+'''
         
         content += '''
 
-# 创建 FastAPI 实例
+# Create FastAPI instance
 app = FastAPI(
     lifespan=lifespan,
     title=settings.app.APP_NAME,
@@ -86,10 +76,10 @@ app = FastAPI(
 )
 
 
-# 全局异常处理器
+# globalexceptionprocessgenerator
 @app.exception_handler(HTTPException)
 async def http_exception_handler(_request: Request, exc: HTTPException):
-    """HTTP 异常处理器"""
+    """HTTP exceptionprocessgenerator"""
     logger.error(f"HTTPException: {exc}")
     error_detail = exc.detail
     
@@ -106,7 +96,7 @@ async def http_exception_handler(_request: Request, exc: HTTPException):
 
 @app.exception_handler(Exception)
 async def general_exception_handler(_request: Request, exc: Exception):
-    """通用异常处理器"""
+    """General exception handler"""
     logger.error(f"Exception: {exc}")
     return JSONResponse(
         status_code=500,
@@ -114,7 +104,7 @@ async def general_exception_handler(_request: Request, exc: Exception):
     )
 
 
-# CORS 中间件
+# CORS middleware
 '''
         
         if self.config_reader.has_cors():
@@ -136,22 +126,22 @@ app.add_middleware(
         
         content += '''
 
-# 静态文件
+# staticfile
 static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
-# 健康检查端点
+# Health check endpoint
 @app.get("/health", tags=["Health"])
 async def health_check():
-    """健康检查端点"""
+    """Health check endpoint"""
     return {"status": "healthy"}
 
 
-# OpenAPI 文档
+# OpenAPI documentation
 def custom_openapi():
-    """自定义 OpenAPI 文档"""
+    """Custom OpenAPI documentation"""
     if app.openapi_schema:
         return app.openapi_schema
     
@@ -169,7 +159,7 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
-# 启动应用
+# startapplication
 if __name__ == "__main__":
     if os.getenv("ENV") == "development":
         logger.info("🚩 Starting the application in development mode...")
@@ -183,14 +173,14 @@ if __name__ == "__main__":
         
         self.file_ops.create_python_file(
             file_path="app/main.py",
-            docstring="FastAPI 应用主入口",
+            docstring="FastAPI application main entry point",
             imports=imports,
             content=content,
             overwrite=True
         )
     
     def _generate_main_with_auth(self) -> None:
-        """生成带认证的 main.py"""
+        """Generate main.py with authentication"""
         imports = [
             "import os",
             "import uvicorn",
@@ -202,12 +192,10 @@ if __name__ == "__main__":
             "",
             "from app.core.config.settings import settings",
             "from app.core.logger import logger_manager",
+            "from app.core.database import db_manager",  # Database is nowrequired
         ]
         
-        if self.config_reader.has_database():
-            imports.append("from app.core.database import db_manager")
-        
-        # 添加路由导入
+        # addrouterimport
         imports.extend([
             "",
             "from app.routers.v1 import (",
@@ -216,24 +204,21 @@ if __name__ == "__main__":
             ")",
         ])
         
-        content = '''# 创建 LoggerManager 实例
+        content = '''# Create LoggerManager instance
 logger_manager.setup()
 
-# 创建 Logger 实例
+# Create Logger instance
 logger = logger_manager.get_logger(__name__)
 
 
-# 创建生命周期
+# Create lifespan
 async def lifespan(_app: FastAPI):
-    """应用生命周期管理"""
+    """Application lifespan management"""
     logger.info("🚩 Starting the application...")
     logger.info(f"🚧 You are working in {os.getenv('ENV', 'development')} environment")
-    '''
-        
-        if self.config_reader.has_database():
-            content += '''
+    
     try:
-        # 初始化数据库连接
+        # Initializedatabase connection
         await db_manager.initialize()
         logger.info("🎉 Database connections initialized successfully")
         await db_manager.test_connections()
@@ -241,26 +226,21 @@ async def lifespan(_app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Database connection failed: {e}")
         logger.warning("⚠️ Application will start without database connections")
-    '''
-        
-        content += '''
+    
     yield
-    '''
-        
-        if self.config_reader.has_database():
-            content += '''
-    # 关闭数据库连接
+    
+    # closedatabase connection
     try:
         await db_manager.close()
         logger.info("🎉 Database connections closed successfully")
     except Exception as e:
         logger.error(f"❌ Database connection closed failed: {e}")
         logger.warning("⚠️ Database connection closed failed")
-    '''
+'''
         
         content += '''
 
-# 创建 FastAPI 实例
+# Create FastAPI instance
 app = FastAPI(
     lifespan=lifespan,
     title=settings.app.APP_NAME,
@@ -269,10 +249,10 @@ app = FastAPI(
 )
 
 
-# 全局异常处理器
+# globalexceptionprocessgenerator
 @app.exception_handler(HTTPException)
 async def http_exception_handler(_request: Request, exc: HTTPException):
-    """HTTP 异常处理器"""
+    """HTTP exceptionprocessgenerator"""
     logger.error(f"HTTPException: {exc}")
     error_detail = exc.detail
     
@@ -289,7 +269,7 @@ async def http_exception_handler(_request: Request, exc: HTTPException):
 
 @app.exception_handler(Exception)
 async def general_exception_handler(_request: Request, exc: Exception):
-    """通用异常处理器"""
+    """General exception handler"""
     logger.error(f"Exception: {exc}")
     return JSONResponse(
         status_code=500,
@@ -297,7 +277,7 @@ async def general_exception_handler(_request: Request, exc: Exception):
     )
 
 
-# CORS 中间件
+# CORS middleware
 '''
         
         if self.config_reader.has_cors():
@@ -319,27 +299,27 @@ app.add_middleware(
         
         content += '''
 
-# 注册路由
+# registerrouter
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(user_router, prefix="/api/v1")
 
 
-# 静态文件
+# staticfile
 static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
-# 健康检查端点
+# Health check endpoint
 @app.get("/health", tags=["Health"])
 async def health_check():
-    """健康检查端点"""
+    """Health check endpoint"""
     return {"status": "healthy"}
 
 
-# OpenAPI 文档
+# OpenAPI documentation
 def custom_openapi():
-    """自定义 OpenAPI 文档"""
+    """Custom OpenAPI documentation"""
     if app.openapi_schema:
         return app.openapi_schema
     
@@ -357,7 +337,7 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
-# 启动应用
+# startapplication
 if __name__ == "__main__":
     if os.getenv("ENV") == "development":
         logger.info("🚩 Starting the application in development mode...")
@@ -371,7 +351,7 @@ if __name__ == "__main__":
         
         self.file_ops.create_python_file(
             file_path="app/main.py",
-            docstring="FastAPI 应用主入口",
+            docstring="FastAPI application main entry point",
             imports=imports,
             content=content,
             overwrite=True

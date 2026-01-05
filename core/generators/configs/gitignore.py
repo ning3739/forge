@@ -1,12 +1,12 @@
-"""gitignore 生成器"""
+"""gitignore generategenerator"""
 from ..templates.base import BaseTemplateGenerator
 
 
 class GitignoreGenerator(BaseTemplateGenerator):
-    """gitignore 文件生成器"""
+    """gitignore File generator"""
     
     def generate(self) -> None:
-        """生成 .gitignore 文件"""
+        """generate .gitignore file"""
         content = self._build_python_section()
         content += self._build_venv_section()
         content += self._build_ide_section()
@@ -24,7 +24,7 @@ class GitignoreGenerator(BaseTemplateGenerator):
         )
     
     def _build_python_section(self) -> str:
-        """构建 Python 相关忽略规则"""
+        """Build Python related ignore rules"""
         return '''# Python
 __pycache__/
 *.py[cod]
@@ -50,7 +50,7 @@ wheels/
 '''
     
     def _build_venv_section(self) -> str:
-        """构建虚拟环境忽略规则"""
+        """Buildvirtual environment ignore rules"""
         return '''# Virtual Environment
 .venv/
 venv/
@@ -60,7 +60,7 @@ env/
 '''
     
     def _build_ide_section(self) -> str:
-        """构建 IDE 忽略规则"""
+        """Build IDE ignore rules"""
         return '''# IDE
 .vscode/
 .idea/
@@ -71,7 +71,7 @@ env/
 '''
     
     def _build_env_section(self) -> str:
-        """构建环境变量忽略规则"""
+        """Buildenvironment variablesignore rules"""
         return '''# Environment Variables
 .env
 .env.local
@@ -86,7 +86,7 @@ secret/.env.production
 '''
     
     def _build_database_section(self) -> str:
-        """构建数据库忽略规则"""
+        """Builddatabaseignore rules"""
         return '''# Database
 *.db
 *.sqlite3
@@ -94,7 +94,7 @@ secret/.env.production
 '''
     
     def _build_testing_section(self) -> str:
-        """构建测试相关忽略规则"""
+        """Buildtestrelated ignore rules"""
         return '''# Testing
 .pytest_cache/
 .coverage
@@ -104,7 +104,7 @@ htmlcov/
 '''
     
     def _build_tools_section(self) -> str:
-        """构建工具相关忽略规则"""
+        """Buildutilityrelated ignore rules"""
         return '''# MyPy
 .mypy_cache/
 .dmypy.json
@@ -116,7 +116,7 @@ dmypy.json
 '''
     
     def _build_os_section(self) -> str:
-        """构建操作系统忽略规则"""
+        """Buildoperating systemignore rules"""
         return '''# OS
 .DS_Store
 Thumbs.db
@@ -124,7 +124,7 @@ Thumbs.db
 '''
     
     def _build_logs_section(self) -> str:
-        """构建日志忽略规则"""
+        """Buildloggingignore rules"""
         return '''# Logs
 *.log
 logs/

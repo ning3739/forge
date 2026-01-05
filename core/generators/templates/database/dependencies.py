@@ -1,24 +1,21 @@
-"""数据库依赖注入文件生成器"""
+"""database dependency injectionFile generator"""
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
 class DatabaseDependenciesGenerator(BaseTemplateGenerator):
-    """数据库依赖注入生成器"""
+    """database dependency injectiongenerategenerator"""
     
     def generate(self) -> None:
-        """生成 app/core/database/dependencies.py"""
-        if not self.config_reader.has_database():
-            return
-        
-        # 只有启用认证时才生成 dependencies.py
+        """generate app/core/database/dependencies.py"""
+        # onlyenableauthenticationwhengenerate dependencies.py
         if not self.config_reader.has_auth():
             return
         
         db_type = self.config_reader.get_database_type()
         auth_type = self.config_reader.get_auth_type()
         
-        # 根据数据库类型确定管理器名称
+        # determine management based on database typegeneratorname
         if db_type == "PostgreSQL":
             db_manager = "postgresql_manager"
             db_import = "from app.core.database.postgresql import postgresql_manager"
@@ -32,7 +29,7 @@ class DatabaseDependenciesGenerator(BaseTemplateGenerator):
             "from sqlalchemy import func",
         ]
         
-        # 根据 ORM 类型添加导入
+        # Add imports based on ORM type
         orm_type = self.config_reader.get_orm_type()
         if orm_type == "SQLModel":
             imports.append("from sqlmodel import select")
@@ -45,7 +42,7 @@ class DatabaseDependenciesGenerator(BaseTemplateGenerator):
             "from app.core.logger import logger_manager",
         ])
         
-        # 根据认证类型添加不同的导入和内容
+        # Add different imports and content based on authentication type
         if auth_type == "complete":
             imports.extend([
                 "from app.crud.auth_crud import get_auth_crud",
@@ -65,14 +62,14 @@ class DatabaseDependenciesGenerator(BaseTemplateGenerator):
         
         self.file_ops.create_python_file(
             file_path="app/core/database/dependencies.py",
-            docstring="FastAPI 依赖注入",
+            docstring="FastAPI dependenciesinjection",
             imports=imports,
             content=content,
             overwrite=True
         )
     
     def _generate_complete_auth_dependencies(self, db_manager: str) -> str:
-        """生成完整认证的依赖注入代码"""
+        """Generate complete authentication dependency injection code"""
         return f'''get_access_token_cookie = APIKeyCookie(
     name="access_token",
     auto_error=False,
@@ -101,7 +98,7 @@ class Dependencies:
         access_token: str = Depends(get_access_token_cookie),
         db: AsyncSession = Depends({db_manager}.get_db),
     ):
-        """获取当前用户（需要认证）"""
+        """Getcurrentuser(needauthentication)"""
         self.logger.info(
             f"get_current_user called with access_token: "
             f"{{'***' if access_token else 'None'}}"
@@ -114,7 +111,7 @@ class Dependencies:
                 detail="Unauthorized access",
             )
         
-        # 验证 access token
+        # Validate access token
         try:
             self.logger.info("Attempting to decode access token")
             token_data = security_manager.decode_token(access_token)
@@ -128,7 +125,7 @@ class Dependencies:
                 if user_id:
                     self.logger.info(f"Validating token in database for user_id: {{user_id}}")
                     
-                    # 验证 access token 在数据库中的有效性
+                    # Validate access token validity in database
                     valid_access_token = await db.execute(
                         select(Token).where(
                             Token.user_id == user_id,
@@ -142,7 +139,7 @@ class Dependencies:
                     if valid_token:
                         self.logger.info(f"Valid token found in database: {{valid_token.id}}")
                         
-                        # 从数据库中获取用户信息
+                        # Get user information from database
                         user = await self.auth_crud.get_user_by_id(user_id)
                         
                         if (
@@ -169,7 +166,7 @@ class Dependencies:
         except Exception as e:
             self.logger.warning(f"Access token validation failed: {{str(e)}}")
         
-        # 如果所有 token 都无效，抛出未授权错误
+        # If all tokens are invalid, raise unauthorized error
         self.logger.warning("All token validation attempts failed")
         raise HTTPException(
             status_code=401,
@@ -180,7 +177,7 @@ class Dependencies:
         self,
         response: Response,
     ) -> bool:
-        """清理用户 tokens（登出时使用）"""
+        """cleanuser tokens(logouthouruse)"""
         response.delete_cookie(
             "access_token",
             domain=settings.domain.COOKIE_DOMAIN,
@@ -199,7 +196,7 @@ class Dependencies:
 '''
     
     def _generate_basic_auth_dependencies(self, db_manager: str) -> str:
-        """生成基础认证的依赖注入代码"""
+        """Generate basic authentication dependency injection code"""
         return f'''get_access_token_cookie = APIKeyCookie(
     name="access_token",
     auto_error=False,
@@ -221,7 +218,7 @@ class Dependencies:
         access_token: str = Depends(get_access_token_cookie),
         db: AsyncSession = Depends({db_manager}.get_db),
     ):
-        """获取当前用户（需要认证）"""
+        """Getcurrentuser(needauthentication)"""
         self.logger.info(
             f"get_current_user called with access_token: "
             f"{{'***' if access_token else 'None'}}"
@@ -234,7 +231,7 @@ class Dependencies:
                 detail="Unauthorized access",
             )
         
-        # 验证 access token
+        # Validate access token
         try:
             self.logger.info("Attempting to decode access token")
             token_data = security_manager.decode_token(access_token)
@@ -246,7 +243,7 @@ class Dependencies:
                 user_id = token_data.get("user_id")
                 
                 if user_id:
-                    # 从数据库中获取用户信息
+                    # Get user information from database
                     user = await self.user_crud.get_user_by_id(user_id)
                     
                     if user and user.is_active and not user.is_deleted:
@@ -265,7 +262,7 @@ class Dependencies:
         except Exception as e:
             self.logger.warning(f"Access token validation failed: {{str(e)}}")
         
-        # 如果验证失败，抛出未授权错误
+        # If validation fails, raise unauthorized error
         self.logger.warning("Token validation failed")
         raise HTTPException(
             status_code=401,

@@ -1,1 +1,1 @@
-"""数据库相关代码生成器"""
+"""database-related codegenerategenerator"""

@@ -8,13 +8,12 @@ Forge is a powerful command-line tool that helps you quickly bootstrap productio
 
 - 🎨 **Beautiful Interactive UI** - Stunning terminal interface with gradient colors and smooth animations
 - 🚀 **Smart Presets** - Carefully curated presets for testing, dev tools, deployment, and monitoring
-- 🔐 **Authentication Ready** - Built-in support for JWT, Session, OAuth2, and API Key authentication
-- 🗄️ **Database Flexibility** - Support for PostgreSQL and MySQL
+- 🔐 **Authentication Ready** - Built-in support for JWT authentication (Basic & Complete)
+- 🗄️ **Database Flexibility** - Support for PostgreSQL and MySQL with SQLModel/SQLAlchemy
 - 📦 **Modular Architecture** - Choose only the features you need
 - 🧪 **Testing Built-in** - Pre-configured pytest with async support and coverage
 - 🐳 **Docker Ready** - Production-ready Docker and Docker Compose configurations
-- 🔍 **Type Safe** - Full type hints and optional MyPy support
-- 📊 **Monitoring** - Built-in health checks, Prometheus metrics, and Sentry integration
+- 🔍 **Type Safe** - Full type hints throughout generated code
 - ⚡ **Async First** - Optimized for FastAPI's async capabilities
 
 ## 📋 Requirements
@@ -26,12 +25,20 @@ Forge is a powerful command-line tool that helps you quickly bootstrap productio
 
 ### Installation
 
+#### From PyPI (Recommended)
+
+```bash
+pip install forge-fastapi
+```
+
+#### From Source
+
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/yourusername/forge.git
 cd forge
 
-# Install dependencies with uv (recommended)
+# Install with uv (recommended)
 uv sync
 
 # Or with pip
@@ -78,10 +85,6 @@ This separation ensures:
 - ✅ Easy project regeneration and updates
 - ✅ Configuration sharing and templates
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed design documentation.
-
----
-
 ## 🎯 Configuration Options
 
 ### Database Options
@@ -102,10 +105,10 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed design documentation.
   - Email Verification
   - Password Reset (Forgot Password)
   - Email Service (SMTP)
-  - Refresh Token (Optional)
+  - Refresh Token
 - **Basic JWT Auth** - Simple authentication
   - Login & Register only
-  - Refresh Token (Optional)
+  - Optional Refresh Token
 
 #### Security Features
 - CORS (Configurable)
@@ -128,10 +131,33 @@ All projects include:
 
 ### Testing Setup
 
+When you enable testing, Forge generates:
+
 - **pytest** - Testing framework with async support
 - **httpx** - HTTP client for testing
 - **pytest-cov** - Code coverage
 - **pytest-asyncio** - Async test support
+
+**Generated Test Files:**
+- `tests/conftest.py` - Pytest configuration with database fixtures
+- `tests/test_main.py` - Tests for main API endpoints (health check, docs)
+- `tests/api/test_auth.py` - Authentication endpoint tests
+- `tests/api/test_users.py` - User endpoint tests
+
+**Running Tests:**
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=app tests/
+
+# Run specific test file
+pytest tests/test_main.py
+
+# Run with verbose output
+pytest -v
+```
 
 ### Deployment
 
@@ -146,21 +172,30 @@ my-awesome-api/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py              # FastAPI application entry point
-│   ├── config.py            # Configuration management
-│   ├── database.py          # Database connection
+│   ├── core/
+│   │   ├── config/          # Configuration management
+│   │   │   ├── settings.py
+│   │   │   └── modules/     # Config modules (app, database, jwt, etc.)
+│   │   ├── database/        # Database connection
+│   │   │   ├── connection.py
+│   │   │   └── postgresql.py / mysql.py
+│   │   └── security.py      # Security utilities
 │   ├── models/              # Database models
 │   ├── schemas/             # Pydantic schemas
-│   ├── api/                 # API routes
-│   │   ├── __init__.py
-│   │   ├── auth.py          # Authentication endpoints
-│   │   └── users.py         # User endpoints
-│   ├── core/                # Core functionality
-│   │   ├── security.py      # Security utilities
-│   │   └── deps.py          # Dependencies
-│   └── tests/               # Test files
-├── alembic/                 # Database migrations
-├── docker-compose.yml       # Docker Compose configuration
-├── Dockerfile               # Docker configuration
+│   ├── crud/                # CRUD operations
+│   ├── services/            # Business logic
+│   ├── routers/             # API routes
+│   │   └── v1/              # API version 1
+│   └── utils/               # Utility functions
+├── tests/                   # Test files (if enabled)
+│   ├── conftest.py          # Pytest configuration and fixtures
+│   ├── test_main.py         # Main API endpoint tests
+│   └── api/
+│       ├── test_auth.py     # Authentication tests
+│       └── test_users.py    # User endpoint tests
+├── alembic/                 # Database migrations (if enabled)
+├── docker-compose.yml       # Docker Compose configuration (if enabled)
+├── Dockerfile               # Docker configuration (if enabled)
 ├── pyproject.toml           # Project dependencies
 ├── .env.example             # Environment variables template
 └── README.md                # Project documentation
@@ -202,14 +237,6 @@ forge init my-project
 forge init my-project --no-interactive
 ```
 
-### `forge info`
-
-Display information about Forge CLI.
-
-```bash
-forge info
-```
-
 ### `forge --version`
 
 Show the current version of Forge.
@@ -242,13 +269,60 @@ forge -v
 ✅ Docker deployment
 ```
 
+## 📂 Project Structure
+
+```
+Forge/
+├── commands/              # CLI command modules
+│   ├── __init__.py       # Command exports
+│   └── init.py           # Project initialization command
+├── core/                 # Core business logic
+│   ├── config_reader.py  # Configuration file reader
+│   ├── project_generator.py  # Project generator
+│   ├── generators/       # Code generators
+│   │   ├── structure.py  # Project structure generator
+│   │   ├── orchestrator.py  # Generator coordinator
+│   │   ├── configs/      # Config file generators
+│   │   ├── deployment/   # Deployment config generators
+│   │   └── templates/    # Application code generators
+│   └── utils/            # Utility functions
+├── ui/                   # User interface components
+│   ├── colors.py         # Color management system
+│   ├── components.py     # UI components
+│   └── logo.py           # Logo rendering
+├── main.py               # CLI entry point
+├── pyproject.toml        # Project configuration
+└── README.md             # This file
+```
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/forge.git
+cd forge
+
+# Install dependencies
+uv sync
+
+# Run tests (if available)
+pytest
+
+# Test build
+./scripts/test_build.sh
+```
+
+### Publishing
+
+See [PUBLISHING.md](PUBLISHING.md) for detailed instructions on publishing to PyPI.
+
 ## 📝 License
 
-[Your License Here]
+MIT License
 
 ## 🙏 Acknowledgments
 

@@ -1,4 +1,4 @@
-"""核心工具模块 - 纯工具类"""
+"""Core utils module - pure utility classes"""
 from .project_config import ProjectConfig
 from .file_operations import FileOperations
 

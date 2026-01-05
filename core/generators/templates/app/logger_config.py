@@ -1,12 +1,12 @@
-"""日志配置文件生成器 - 生成 Pydantic 配置类"""
+"""loggingConfiguration file generator - generate Pydantic configurationclass"""
 from ..base import BaseTemplateGenerator
 
 
 class ConfigLoggerGenerator(BaseTemplateGenerator):
-    """生成 app/core/config/modules/logger.py 文件 - Pydantic 日志配置类"""
+    """generate app/core/config/modules/logger.py file - Pydantic loggingconfigurationclass"""
     
     def generate(self) -> None:
-        """生成日志配置文件"""
+        """generateloggingconfigurationfile"""
         imports = [
             "from typing import Optional",
             "from pydantic import Field",
@@ -14,41 +14,41 @@ class ConfigLoggerGenerator(BaseTemplateGenerator):
         ]
         
         content = '''class LoggingSettings(EnvBaseSettings):
-    """Loguru 日志配置设置"""
+    """Loguru loggingconfigurationSet"""
     
     LOG_LEVEL: str = Field(
         default="INFO",
-        description="日志级别: DEBUG, INFO, WARNING, ERROR, CRITICAL",
+        description="Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL",
     )
     LOG_TO_FILE: bool = Field(
         default=False,
-        description="是否将日志写入文件"
+        description="Whether to write logging to file"
     )
     LOG_FILE_PATH: str = Field(
         default="logs/app.log",
-        description="日志文件路径"
+        description="loggingFile path"
     )
     LOG_TO_CONSOLE: bool = Field(
         default=True,
-        description="是否输出到控制台"
+        description="Whether to output to console"
     )
     LOG_CONSOLE_LEVEL: str = Field(
         default="INFO",
-        description="控制台日志级别"
+        description="Console logging level"
     )
     LOG_ROTATION: Optional[str] = Field(
         default="1 day",
-        description="日志轮转周期，支持格式: '1 day', '500 MB', '10:00' 等"
+        description="Log rotation period, supports formats: '1 day', '500 MB', '10:00', etc."
     )
     LOG_RETENTION_PERIOD: Optional[str] = Field(
         default="7 days",
-        description="日志保留期，超过此时间的日志文件会被自动删除，支持格式: '7 days', '1 week', '1 month' 等"
+        description="Log retention period, log files older than this will be automatically deleted, supports formats: '7 days', '1 week', '1 month', etc."
     )
 '''
         
         self.file_ops.create_python_file(
             file_path="app/core/config/modules/logger.py",
-            docstring="日志配置模块",
+            docstring="loggingconfigurationmodule",
             imports=imports,
             content=content,
             overwrite=True

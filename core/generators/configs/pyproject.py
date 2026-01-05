@@ -1,12 +1,12 @@
-"""pyproject.toml 生成器"""
+"""pyproject.toml generategenerator"""
 from ..templates.base import BaseTemplateGenerator
 
 
 class PyprojectGenerator(BaseTemplateGenerator):
-    """pyproject.toml 文件生成器"""
+    """pyproject.toml File generator"""
     
     def generate(self) -> None:
-        """生成 pyproject.toml 文件"""
+        """generate pyproject.toml file"""
         project_name = self.config_reader.get_project_name()
         
         content = self._build_project_section(project_name)
@@ -22,7 +22,7 @@ class PyprojectGenerator(BaseTemplateGenerator):
         )
     
     def _build_project_section(self, project_name: str) -> str:
-        """构建项目基本信息部分"""
+        """Buildprojectbasic information section"""
         return f'''[project]
 name = "{project_name}"
 version = "0.1.0"
@@ -32,7 +32,7 @@ requires-python = ">=3.10"
 '''
     
     def _build_dependencies_section(self) -> str:
-        """构建依赖部分"""
+        """Builddependencies section"""
         dependencies = self._get_dependencies()
         
         content = 'dependencies = [\n'
@@ -43,7 +43,7 @@ requires-python = ">=3.10"
         return content
     
     def _build_dev_dependencies_section(self) -> str:
-        """构建开发依赖部分"""
+        """Builddevelopment dependencies section"""
         dev_dependencies = self._get_dev_dependencies()
         
         if not dev_dependencies:
@@ -58,7 +58,7 @@ requires-python = ">=3.10"
         return content
     
     def _build_build_system_section(self) -> str:
-        """构建构建系统部分"""
+        """BuildBuildsystem section"""
         return '''[build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -68,7 +68,7 @@ packages = ["app"]
 '''
     
     def _build_tool_configs_section(self) -> str:
-        """构建工具配置部分"""
+        """Buildutilityconfiguration section"""
         content = ''
         
         if self.config_reader.has_testing():
@@ -82,27 +82,26 @@ packages = ["app"]
         return content
     
     def _get_dependencies(self) -> list:
-        """获取项目依赖列表"""
+        """Getprojectdependencieslist"""
         dependencies = [
             'fastapi>=0.104.0',
             'uvicorn[standard]>=0.24.0',
             'pydantic>=2.5.0',
             'pydantic-settings>=2.1.0',
-            'loguru>=0.7.0',  # 日志库
+            'loguru>=0.7.0',  # logginglibrary
         ]
         
-        # 数据库依赖
-        if self.config_reader.has_database():
-            dependencies.extend(self._get_database_dependencies())
+        # databasedependencies(is nowrequired)
+        dependencies.extend(self._get_database_dependencies())
         
-        # 认证依赖
+        # authenticationdependencies
         if self.config_reader.has_auth():
             dependencies.extend(self._get_auth_dependencies())
         
         return dependencies
     
     def _get_database_dependencies(self) -> list:
-        """获取数据库相关依赖"""
+        """Getdatabaserelateddependencies"""
         deps = []
         
         db_type = self.config_reader.get_database_type()
@@ -114,10 +113,10 @@ packages = ["app"]
         elif orm_type == "SQLAlchemy":
             deps.append('sqlalchemy>=2.0.0')
         
-        # 异步 SQLAlchemy 需要 greenlet
+        # async SQLAlchemy need greenlet
         deps.append('greenlet>=3.0.0')
         
-        # 数据库驱动
+        # databasedriver
         if db_type == "PostgreSQL":
             deps.extend([
                 'psycopg2-binary>=2.9.9',
@@ -129,32 +128,32 @@ packages = ["app"]
                 'aiomysql>=0.2.0'
             ])
         
-        # 迁移工具
+        # migrationutility
         if self.config_reader.has_migration():
             deps.append('alembic>=1.13.0')
         
         return deps
     
     def _get_auth_dependencies(self) -> list:
-        """获取认证相关依赖"""
+        """Getauthenticationrelateddependencies"""
         deps = [
             'python-jose[cryptography]>=3.3.0',
-            'argon2-cffi>=23.1.0',  # Argon2 密码哈希
+            'argon2-cffi>=23.1.0',  # Argon2 Passwordhash
             'python-multipart>=0.0.6',
-            'email-validator>=2.1.0',  # Email 验证
+            'email-validator>=2.1.0',  # Email Validate
         ]
         
-        # Complete JWT Auth 需要邮件服务依赖
+        # Complete JWT Auth needemailservicedependencies
         if self.config_reader.get_auth_type() == "complete":
             deps.extend([
                 'jinja2>=3.1.0',
-                'aiosmtplib>=3.0.0',  # 异步 SMTP 客户端
+                'aiosmtplib>=3.0.0',  # Async SMTP client
             ])
         
         return deps
     
     def _get_dev_dependencies(self) -> list:
-        """获取开发依赖列表"""
+        """Get development dependencies list"""
         dev_deps = []
         
         if self.config_reader.has_testing():
@@ -174,7 +173,7 @@ packages = ["app"]
         return dev_deps
     
     def _build_pytest_config(self) -> str:
-        """构建 pytest 配置"""
+        """Build pytest configuration"""
         return '''
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -182,7 +181,7 @@ asyncio_mode = "auto"
 '''
     
     def _build_black_config(self) -> str:
-        """构建 Black 配置"""
+        """Build Black configuration"""
         return '''
 [tool.black]
 line-length = 88
@@ -191,7 +190,7 @@ include = '\\.pyi?$'
 '''
     
     def _build_ruff_config(self) -> str:
-        """构建 Ruff 配置"""
+        """Build Ruff configuration"""
         return '''
 [tool.ruff]
 line-length = 88
@@ -201,7 +200,7 @@ ignore = []
 '''
     
     def _build_mypy_config(self) -> str:
-        """构建 MyPy 配置"""
+        """Build MyPy configuration"""
         return '''
 [tool.mypy]
 python_version = "3.10"

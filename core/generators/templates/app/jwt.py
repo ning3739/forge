@@ -1,13 +1,13 @@
-"""JWT 配置文件生成器"""
+"""JWT Configuration file generator"""
 from ..base import BaseTemplateGenerator
 
 
 class ConfigJwtGenerator(BaseTemplateGenerator):
-    """生成 app/core/config/modules/jwt.py 文件"""
+    """generate app/core/config/modules/jwt.py file"""
     
     def generate(self) -> None:
-        """生成 JWT 配置文件"""
-        # 只有启用认证时才生成
+        """generate JWT configurationfile"""
+        # onlyenableauthenticationwhengenerate
         if not self.config_reader.has_auth():
             return
         
@@ -20,10 +20,10 @@ class ConfigJwtGenerator(BaseTemplateGenerator):
         auth_type = self.config_reader.get_auth_type()
         project_name = self.config_reader.get_project_name()
         
-        # 生成项目标识符（用于 issuer 和 audience）
+        # Generate project identifier (for issuer and audience)
         project_identifier = project_name.lower().replace('-', '_').replace(' ', '_')
         
-        # 基础 JWT 配置（所有认证类型都需要）
+        # Base JWT configuration (required for all authentication types)
         base_fields = f'''    JWT_SECRET_KEY: SecretStr = Field(
         ...,
         repr=False,
@@ -38,7 +38,7 @@ class ConfigJwtGenerator(BaseTemplateGenerator):
         description="JWT access token expiration time (seconds)"
     )'''
         
-        # 只有 Complete JWT Auth 才包含 Refresh Token
+        # Only Complete JWT Auth includes Refresh Token
         if auth_type == "complete":
             base_fields += f'''
     JWT_REFRESH_TOKEN_EXPIRATION: PositiveInt = Field(
@@ -46,7 +46,7 @@ class ConfigJwtGenerator(BaseTemplateGenerator):
         description="JWT refresh token expiration time (seconds)"
     )'''
         
-        # 添加 issuer 和 audience
+        # add issuer and audience
         base_fields += f'''
     JWT_ISSUER: Optional[str] = Field(
         default="{project_identifier}",
@@ -58,14 +58,14 @@ class ConfigJwtGenerator(BaseTemplateGenerator):
     )'''
         
         content = f'''class JWTSettings(EnvBaseSettings):
-    """JWT 认证配置"""
+    """JWT authenticationconfiguration"""
 
 {base_fields}
 '''
         
         self.file_ops.create_python_file(
             file_path="app/core/config/modules/jwt.py",
-            docstring="JWT 认证配置模块",
+            docstring="JWT authenticationconfigurationmodule",
             imports=imports,
             content=content,
             overwrite=True

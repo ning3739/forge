@@ -1,12 +1,12 @@
-"""Logger Manager 生成器"""
+"""Logger Manager generategenerator"""
 from ..base import BaseTemplateGenerator
 
 
 class LoggerManagerGenerator(BaseTemplateGenerator):
-    """生成 app/core/logger.py 文件 - Logger 管理器"""
+    """generate app/core/logger.py file - Logger managementgenerator"""
     
     def generate(self) -> None:
-        """生成 Logger Manager 文件"""
+        """generate Logger Manager file"""
         imports = [
             "import sys",
             "import logging",
@@ -18,9 +18,9 @@ class LoggerManagerGenerator(BaseTemplateGenerator):
         ]
         
         content = '''class LoggerManager:
-    """日志管理器
+    """Logging management generator
     
-    使用 Loguru 作为日志库，提供统一的日志管理接口
+    Use Loguru as logging library, provides unified logging management interface
     """
     
     def __init__(self):
@@ -28,14 +28,14 @@ class LoggerManagerGenerator(BaseTemplateGenerator):
         self._loggers = {}
     
     def setup(self) -> None:
-        """初始化日志配置"""
+        """Initializeloggingconfiguration"""
         if self._initialized:
             return
         
-        # 移除默认的 handler
+        # removedefault handler
         logger.remove()
         
-        # 控制台输出
+        # Console output
         if settings.logging.LOG_TO_CONSOLE:
             logger.add(
                 sys.stdout,
@@ -47,7 +47,7 @@ class LoggerManagerGenerator(BaseTemplateGenerator):
                 colorize=True,
             )
         
-        # 文件输出
+        # fileoutput
         if settings.logging.LOG_TO_FILE:
             log_path = Path(settings.logging.LOG_FILE_PATH)
             log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -62,24 +62,24 @@ class LoggerManagerGenerator(BaseTemplateGenerator):
                 encoding="utf-8",
             )
         
-        # 拦截标准库的日志
+        # Intercept standard library logging
         self._intercept_standard_logging()
         
         self._initialized = True
         logger.info("Logger initialized successfully")
     
     def _intercept_standard_logging(self) -> None:
-        """拦截标准库的日志，重定向到 Loguru"""
+        """Intercept standard library logging, redirect to Loguru"""
         
         class InterceptHandler(logging.Handler):
             def emit(self, record: logging.LogRecord) -> None:
-                # 获取对应的 Loguru level
+                # Get corresponding Loguru level
                 try:
                     level = logger.level(record.levelname).name
                 except ValueError:
                     level = record.levelno
                 
-                # 查找调用者
+                # Find caller
                 frame, depth = logging.currentframe(), 2
                 while frame.f_code.co_filename == logging.__file__:
                     frame = frame.f_back
@@ -89,21 +89,21 @@ class LoggerManagerGenerator(BaseTemplateGenerator):
                     level, record.getMessage()
                 )
         
-        # 拦截标准库日志
+        # Intercept standard library logging
         logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
         
-        # 拦截常见库的日志
+        # Intercept common library logging
         for logger_name in ["uvicorn", "uvicorn.access", "uvicorn.error", "fastapi"]:
             logging.getLogger(logger_name).handlers = [InterceptHandler()]
     
     def get_logger(self, name: Optional[str] = None):
-        """获取 logger 实例
+        """Get logger instance
         
         Args:
-            name: logger 名称，通常使用 __name__
+            name: Logger name, usually use __name__
         
         Returns:
-            logger 实例
+            logger instance
         """
         if not self._initialized:
             self.setup()
@@ -113,13 +113,13 @@ class LoggerManagerGenerator(BaseTemplateGenerator):
         return logger
 
 
-# 创建全局单例
+# Createglobalsingleton
 logger_manager = LoggerManager()
 '''
         
         self.file_ops.create_python_file(
             file_path="app/core/logger.py",
-            docstring="Logger 管理器模块",
+            docstring="Logger managementgeneratormodule",
             imports=imports,
             content=content,
             overwrite=True

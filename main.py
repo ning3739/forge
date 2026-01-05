@@ -3,11 +3,10 @@ import warnings
 import typer
 from typing import Optional
 
-# 禁用 urllib3 的 OpenSSL 警告
+# Disable urllib3 OpenSSL warnings
 warnings.filterwarnings('ignore', message='urllib3 v2 only supports OpenSSL 1.1.1+')
 
 from ui.logo import show_logo
-from commands.info import info_command
 from commands.init import init_command
 
 # Version constant
@@ -22,7 +21,6 @@ app = typer.Typer(
 )
 
 # Register commands
-app.command(name="info", help="Show Forge CLI information")(info_command)
 app.command(name="init", help="Initialize a new FastAPI project")(init_command)
 
 
@@ -52,8 +50,8 @@ def main_callback(
     """
     if ctx.invoked_subcommand is None:
         show_logo()
-        typer.echo()  # 空行
-        typer.echo(ctx.get_help())  # 显示帮助信息
+        typer.echo()  # Empty line
+        typer.echo(ctx.get_help())  # Show help information
 
 
 def main():

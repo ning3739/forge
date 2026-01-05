@@ -1,15 +1,15 @@
-"""用户 Schema 生成器"""
+"""user Schema generategenerator"""
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
 class UserSchemaGenerator(BaseTemplateGenerator):
-    """用户 Schema 文件生成器"""
+    """user Schema File generator"""
     
     def generate(self) -> None:
-        """生成用户 Schema 文件
+        """generateuser Schema file
         
-        注意：此生成器由 Orchestrator 在启用认证时调用
+        Note: This generator is called by Orchestrator when authentication is enabled
         """
         auth_type = self.config_reader.get_auth_type()
         
@@ -19,23 +19,23 @@ class UserSchemaGenerator(BaseTemplateGenerator):
             self._generate_complete_schemas()
     
     def _generate_basic_schemas(self) -> None:
-        """生成 Basic JWT Auth 的 Schemas"""
+        """generate Basic JWT Auth  Schemas"""
         imports = [
             "from datetime import datetime",
             "from typing import Optional",
             "from pydantic import BaseModel, EmailStr, Field, ConfigDict, model_validator",
         ]
         
-        content = '''# ========== 基础 Schema ==========
+        content = '''# ========== base Schema ==========
 
 class UserBase(BaseModel):
-    """用户基础 Schema"""
+    """userbase Schema"""
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
 
 
 class UserCreate(UserBase):
-    """用户创建 Schema"""
+    """userCreate Schema"""
     password: str = Field(..., min_length=6, max_length=100)
     
     model_config = ConfigDict(
@@ -50,7 +50,7 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
-    """用户更新 Schema"""
+    """userupdate Schema"""
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
     password: Optional[str] = Field(None, min_length=6, max_length=100)
@@ -58,7 +58,7 @@ class UserUpdate(BaseModel):
 
 
 class UserResponse(UserBase):
-    """用户响应 Schema"""
+    """userresponse Schema"""
     id: int
     is_active: bool
     is_superuser: bool
@@ -68,19 +68,19 @@ class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-# ========== 认证相关 Schema ==========
+# ========== authenticationrelated Schema ==========
 
 class UserLogin(BaseModel):
-    """用户登录 Schema"""
-    username: Optional[str] = Field(None, description="用户名")
-    email: Optional[EmailStr] = Field(None, description="邮箱")
+    """User login Schema"""
+    username: Optional[str] = Field(None, description="Username")
+    email: Optional[EmailStr] = Field(None, description="Email")
     password: str = Field(..., min_length=6)
     
     @model_validator(mode='after')
     def check_username_or_email(self):
-        """验证至少提供用户名或邮箱之一"""
+        """Validate that at least username or email is provided"""
         if not self.username and not self.email:
-            raise ValueError('必须提供用户名或邮箱')
+            raise ValueError('Must provide username or email')
         return self
     
     model_config = ConfigDict(
@@ -94,7 +94,7 @@ class UserLogin(BaseModel):
 
 
 class Token(BaseModel):
-    """令牌响应 Schema"""
+    """tokenresponse Schema"""
     access_token: str
     token_type: str = "bearer"
     
@@ -109,37 +109,37 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    """令牌数据 Schema"""
+    """tokendata Schema"""
     username: Optional[str] = None
     user_id: Optional[int] = None
 '''
         
         self.file_ops.create_python_file(
             file_path="app/schemas/user.py",
-            docstring="用户相关 Pydantic Schemas",
+            docstring="userrelated Pydantic Schemas",
             imports=imports,
             content=content,
             overwrite=True
         )
     
     def _generate_complete_schemas(self) -> None:
-        """生成 Complete JWT Auth 的 Schemas"""
+        """generate Complete JWT Auth  Schemas"""
         imports = [
             "from datetime import datetime",
             "from typing import Optional",
             "from pydantic import BaseModel, EmailStr, Field, ConfigDict, model_validator",
         ]
         
-        content = '''# ========== 基础 Schema ==========
+        content = '''# ========== base Schema ==========
 
 class UserBase(BaseModel):
-    """用户基础 Schema"""
+    """userbase Schema"""
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
 
 
 class UserCreate(UserBase):
-    """用户创建 Schema"""
+    """userCreate Schema"""
     password: str = Field(..., min_length=6, max_length=100)
     
     model_config = ConfigDict(
@@ -154,7 +154,7 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
-    """用户更新 Schema"""
+    """userupdate Schema"""
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
     password: Optional[str] = Field(None, min_length=6, max_length=100)
@@ -162,7 +162,7 @@ class UserUpdate(BaseModel):
 
 
 class UserResponse(UserBase):
-    """用户响应 Schema"""
+    """userresponse Schema"""
     id: int
     is_active: bool
     is_verified: bool
@@ -174,19 +174,19 @@ class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-# ========== 认证相关 Schema ==========
+# ========== authenticationrelated Schema ==========
 
 class UserLogin(BaseModel):
-    """用户登录 Schema"""
-    username: Optional[str] = Field(None, description="用户名")
-    email: Optional[EmailStr] = Field(None, description="邮箱")
+    """User login Schema"""
+    username: Optional[str] = Field(None, description="Username")
+    email: Optional[EmailStr] = Field(None, description="Email")
     password: str = Field(..., min_length=6)
     
     @model_validator(mode='after')
     def check_username_or_email(self):
-        """验证至少提供用户名或邮箱之一"""
+        """Validate that at least username or email is provided"""
         if not self.username and not self.email:
-            raise ValueError('必须提供用户名或邮箱')
+            raise ValueError('Must provide username or email')
         return self
     
     model_config = ConfigDict(
@@ -200,7 +200,7 @@ class UserLogin(BaseModel):
 
 
 class Token(BaseModel):
-    """令牌响应 Schema"""
+    """tokenresponse Schema"""
     access_token: str
     refresh_token: Optional[str] = None
     token_type: str = "bearer"
@@ -217,20 +217,20 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    """令牌数据 Schema"""
+    """tokendata Schema"""
     username: Optional[str] = None
     user_id: Optional[int] = None
 
 
 class RefreshTokenRequest(BaseModel):
-    """刷新令牌请求 Schema"""
-    refresh_token: str = Field(..., description="刷新令牌")
+    """refreshtokenrequest Schema"""
+    refresh_token: str = Field(..., description="refreshtoken")
 
 
-# ========== 邮箱验证相关 Schema ==========
+# ========== EmailValidaterelated Schema ==========
 
 class EmailVerificationRequest(BaseModel):
-    """邮箱验证请求 Schema"""
+    """EmailValidaterequest Schema"""
     email: EmailStr
     code: str = Field(..., min_length=4, max_length=10)
     
@@ -245,14 +245,14 @@ class EmailVerificationRequest(BaseModel):
 
 
 class ResendVerificationRequest(BaseModel):
-    """重发验证码请求 Schema"""
+    """Resend verification code request Schema"""
     email: EmailStr
 
 
-# ========== 密码重置相关 Schema ==========
+# ========== Passwordresetrelated Schema ==========
 
 class PasswordResetRequest(BaseModel):
-    """密码重置请求 Schema"""
+    """Passwordresetrequest Schema"""
     email: EmailStr
     
     model_config = ConfigDict(
@@ -265,7 +265,7 @@ class PasswordResetRequest(BaseModel):
 
 
 class PasswordResetConfirm(BaseModel):
-    """密码重置确认 Schema"""
+    """Passwordresetconfirm Schema"""
     email: EmailStr
     code: str = Field(..., min_length=4, max_length=10)
     new_password: str = Field(..., min_length=6, max_length=100)
@@ -282,7 +282,7 @@ class PasswordResetConfirm(BaseModel):
 
 
 class PasswordChange(BaseModel):
-    """密码修改 Schema"""
+    """Passwordmodify Schema"""
     old_password: str = Field(..., min_length=6)
     new_password: str = Field(..., min_length=6, max_length=100)
     
@@ -298,7 +298,7 @@ class PasswordChange(BaseModel):
         
         self.file_ops.create_python_file(
             file_path="app/schemas/user.py",
-            docstring="用户相关 Pydantic Schemas - Complete JWT Auth",
+            docstring="userrelated Pydantic Schemas - Complete JWT Auth",
             imports=imports,
             content=content,
             overwrite=True

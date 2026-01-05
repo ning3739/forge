@@ -1,1 +1,1 @@
-"""Pydantic Schema 生成器"""
+"""Pydantic schema generators"""

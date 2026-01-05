@@ -1,26 +1,26 @@
-"""Email 配置生成器"""
+"""Email configurationgenerategenerator"""
 from pathlib import Path
 from core.utils import FileOperations
 from core.config_reader import ConfigReader
 
 
 class ConfigEmailGenerator:
-    """Email 配置文件生成器"""
+    """Email Configuration file generator"""
     
     def __init__(self, project_path: Path, config_reader: ConfigReader):
-        """初始化配置生成器
+        """Initializeconfigurationgenerategenerator
         
         Args:
-            project_path: 项目根目录路径
-            config_reader: 配置读取器实例
+            project_path: Project root directory path
+            config_reader: configurationReadgeneratorinstance
         """
         self.project_path = Path(project_path)
         self.config_reader = config_reader
         self.file_ops = FileOperations(base_path=project_path)
     
     def generate(self) -> None:
-        """生成 email 配置文件"""
-        # 只有 Complete JWT Auth 才生成邮件配置
+        """generate email configurationfile"""
+        # Only generate email configuration for Complete JWT Auth
         if self.config_reader.get_auth_type() != "complete":
             return
         

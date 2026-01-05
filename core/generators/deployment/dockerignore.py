@@ -1,12 +1,12 @@
-"""dockerignore 生成器"""
+"""dockerignore generator"""
 from ..templates.base import BaseTemplateGenerator
 
 
 class DockerignoreGenerator(BaseTemplateGenerator):
-    """.dockerignore 文件生成器"""
+    """.dockerignore file generator"""
     
     def generate(self) -> None:
-        """生成 .dockerignore 文件"""
+        """generate .dockerignore file"""
         content = self._build_python_section()
         content += self._build_venv_section()
         content += self._build_ide_section()
@@ -23,7 +23,7 @@ class DockerignoreGenerator(BaseTemplateGenerator):
         )
     
     def _build_python_section(self) -> str:
-        """构建 Python 相关忽略规则"""
+        """Build Python-related ignore rules"""
         return '''# Python
 __pycache__
 *.py[cod]
@@ -49,7 +49,7 @@ wheels
 '''
     
     def _build_venv_section(self) -> str:
-        """构建虚拟环境忽略规则"""
+        """Build virtual environment ignore rules"""
         return '''# Virtual Environment
 .venv
 venv
@@ -59,7 +59,7 @@ env
 '''
     
     def _build_ide_section(self) -> str:
-        """构建 IDE 忽略规则"""
+        """Build IDE ignore rules"""
         return '''# IDE
 .vscode
 .idea
@@ -70,7 +70,7 @@ env
 '''
     
     def _build_git_section(self) -> str:
-        """构建 Git 忽略规则"""
+        """Build Git ignore rules"""
         return '''# Git
 .git
 .gitignore
@@ -79,7 +79,7 @@ env
 '''
     
     def _build_env_section(self) -> str:
-        """构建环境变量忽略规则"""
+        """Build environment variables ignore rules"""
         return '''# Environment Variables
 .env
 .env.*
@@ -88,7 +88,7 @@ env
 '''
     
     def _build_testing_section(self) -> str:
-        """构建测试相关忽略规则"""
+        """Build testing-related ignore rules"""
         return '''# Testing
 .pytest_cache
 .coverage
@@ -99,7 +99,7 @@ tests
 '''
     
     def _build_docs_section(self) -> str:
-        """构建文档忽略规则"""
+        """Build documentation ignore rules"""
         return '''# Documentation
 *.md
 docs
@@ -107,7 +107,7 @@ docs
 '''
     
     def _build_misc_section(self) -> str:
-        """构建其他忽略规则"""
+        """Build miscellaneous ignore rules"""
         return '''# Misc
 .DS_Store
 Thumbs.db

@@ -1,1 +1,1 @@
-"""应用核心代码生成器"""
+"""Application core code generator"""

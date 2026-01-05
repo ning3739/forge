@@ -1,4 +1,4 @@
-"""代码模板生成器模块
+"""code templatesgenerategeneratormodule
 
-此模块包含生成 FastAPI 应用代码的所有模板生成器
+Thismodulecontainsgenerate FastAPI applicationall code templatesgenerategenerator
 """

@@ -1,60 +1,57 @@
-"""Alembic 迁移工具生成器"""
+"""Alembic migration tool generator"""
 from pathlib import Path
 from core.utils import FileOperations
 from core.config_reader import ConfigReader
 
 
 class AlembicGenerator:
-    """Alembic 迁移工具生成器"""
+    """Alembic migration tool generator"""
     
     def __init__(self, project_path: Path, config_reader: ConfigReader):
-        """初始化 Alembic 生成器
+        """Initialize Alembic generator
         
         Args:
-            project_path: 项目根目录路径
-            config_reader: 配置读取器实例
+            project_path: Project root directory path
+            config_reader: Configuration reader instance
         """
         self.project_path = Path(project_path)
         self.config_reader = config_reader
         self.file_ops = FileOperations(base_path=project_path)
     
     def generate(self) -> None:
-        """生成 Alembic 配置"""
-        # 只有配置了数据库且启用了迁移工具才生成
-        if not self.config_reader.has_database():
-            return
-        
+        """generate Alembic configuration"""
+        # Only generate if migration tool is enabled
         if not self.config_reader.has_migration():
             return
         
-        # 检查是否已经初始化
+        # Check if already initialized
         env_py = self.project_path / "alembic" / "env.py"
         if env_py.exists():
             return
         
-        # 始终手动创建完整的 Alembic 结构
-        # 这样可以确保即使 Alembic 未安装，项目也有完整的迁移文件
+        # Always manually create complete Alembic structure
+        # This ensures the project has complete migration files even if Alembic is not installed
         self._create_alembic_structure()
     
     def _create_alembic_structure(self) -> None:
-        """创建完整的 Alembic 结构"""
-        # 创建目录
+        """Create complete Alembic structure"""
+        # Create directories
         alembic_dir = self.project_path / "alembic"
         alembic_dir.mkdir(exist_ok=True)
         (alembic_dir / "versions").mkdir(exist_ok=True)
         
-        # 创建所有必需的文件
+        # Create all required files
         self._create_alembic_ini()
         self._create_env_py()
         self._create_script_mako()
         self._create_alembic_readme()
         
-        # 创建 versions 目录的 .gitkeep
+        # Create .gitkeep in versions directory
         gitkeep = alembic_dir / "versions" / ".gitkeep"
         gitkeep.touch(exist_ok=True)
     
     def _create_alembic_ini(self) -> None:
-        """创建 alembic.ini 文件"""
+        """Create alembic.ini file"""
         db_type = self.config_reader.get_database_type()
         
         if db_type == "PostgreSQL":
@@ -62,25 +59,26 @@ class AlembicGenerator:
         elif db_type == "MySQL":
             db_url_example = "mysql://user:password@localhost/dbname"
         else:
-            db_url_example = "sqlite:///./app.db"
+            # Should not reach here, only supports PostgreSQL and MySQL
+            raise ValueError(f"Unsupported database type: {db_type}")
         
-        content = f'''# Alembic 配置文件
+        content = f'''# Alembic configuration file
 
 [alembic]
-# 迁移脚本的路径
+# Path to migration scripts
 script_location = alembic
 
-# 模板文件
+# Template file
 file_template = %%(rev)s_%%(slug)s
 
-# 时区设置
+# Timezone setting
 timezone = UTC
 
-# 数据库 URL（从环境变量读取）
+# Database URL (read from environment variables)
 # sqlalchemy.url = {db_url_example}
 # Database URL is configured in env.py from environment variables
 
-# 日志配置
+# Logging configuration
 [loggers]
 keys = root,sqlalchemy,alembic
 
@@ -123,7 +121,7 @@ datefmt = %H:%M:%S
         )
     
     def _create_env_py(self) -> None:
-        """创建 env.py 文件"""
+        """Create env.py file"""
         orm_type = self.config_reader.get_orm_type()
         
         if orm_type == "SQLModel":
@@ -132,8 +130,20 @@ datefmt = %H:%M:%S
             self._create_sqlalchemy_env_py()
     
     def _create_sqlmodel_env_py(self) -> None:
-        """创建 SQLModel 的 env.py（异步版本）"""
-        content = '''"""Alembic 环境配置 - SQLModel (异步版本)"""
+        """Create env.py for SQLModel (async version)"""
+        db_type = self.config_reader.get_database_type()
+        project_name = self.config_reader.get_project_name()
+        db_name = project_name.lower().replace('-', '_').replace(' ', '_')
+        
+        # Set default URL based on database type
+        if db_type == "PostgreSQL":
+            default_url = f"postgresql://user:password@localhost:5432/{db_name}_dev"
+        elif db_type == "MySQL":
+            default_url = f"mysql://user:password@localhost:3306/{db_name}_dev"
+        else:
+            raise ValueError(f"Unsupported database type: {db_type}")
+        
+        content = f'''"""Alembic environment configuration - SQLModel (async version)"""
 from logging.config import fileConfig
 import asyncio
 import os
@@ -142,35 +152,35 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
-# 加载环境变量
+# Load environment variables
 from dotenv import load_dotenv
 env_file = Path(__file__).parent.parent / "secret" / ".env.development"
 if env_file.exists():
     load_dotenv(env_file)
 
-# 导入 SQLModel 的 Base
+# Import SQLModel Base
 from sqlmodel import SQLModel
 
-# 导入所有模型以便 Alembic 能够检测到它们
+# Import all models so Alembic can detect them
 from app.models.user import User
 from app.models.token import RefreshToken, VerificationCode
 
-# Alembic Config 对象
+# Alembic Config object
 config = context.config
 
-# 配置日志
+# Configure logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# 设置 MetaData
+# Set MetaData
 target_metadata = SQLModel.metadata
 
 
-# 从环境变量获取数据库 URL
+# Get database URL from environment variables
 def get_url():
-    """从环境变量获取数据库 URL"""
-    url = os.getenv("DATABASE_URL", "sqlite:///./app.db")
-    # 转换为异步驱动
+    """Get database URL from environment variables"""
+    url = os.getenv("DATABASE_URL", "{default_url}")
+    # Convert to async driver
     if url.startswith("mysql://"):
         url = url.replace("mysql://", "mysql+aiomysql://", 1)
     elif url.startswith("postgresql://"):
@@ -179,13 +189,13 @@ def get_url():
 
 
 def run_migrations_offline() -> None:
-    """在离线模式下运行迁移（同步模式）"""
+    """Run migrations in offline mode (sync mode)"""
     url = get_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        dialect_opts={{"paramstyle": "named"}},
     )
 
     with context.begin_transaction():
@@ -193,7 +203,7 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection):
-    """执行迁移的辅助函数"""
+    """Helper function to execute migrations"""
     context.configure(
         connection=connection,
         target_metadata=target_metadata
@@ -204,7 +214,7 @@ def do_run_migrations(connection):
 
 
 async def run_migrations_online() -> None:
-    """在在线模式下运行迁移（异步模式）"""
+    """Run migrations in online mode (async mode)"""
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = get_url()
     
@@ -233,8 +243,20 @@ else:
         )
     
     def _create_sqlalchemy_env_py(self) -> None:
-        """创建 SQLAlchemy 的 env.py（异步版本）"""
-        content = '''"""Alembic 环境配置 - SQLAlchemy (异步版本)"""
+        """Create env.py for SQLAlchemy (async version)"""
+        db_type = self.config_reader.get_database_type()
+        project_name = self.config_reader.get_project_name()
+        db_name = project_name.lower().replace('-', '_').replace(' ', '_')
+        
+        # Set default URL based on database type
+        if db_type == "PostgreSQL":
+            default_url = f"postgresql://user:password@localhost:5432/{db_name}_dev"
+        elif db_type == "MySQL":
+            default_url = f"mysql://user:password@localhost:3306/{db_name}_dev"
+        else:
+            raise ValueError(f"Unsupported database type: {db_type}")
+        
+        content = f'''"""Alembic environment configuration - SQLAlchemy (async version)"""
 from logging.config import fileConfig
 import asyncio
 import os
@@ -243,35 +265,35 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
-# 加载环境变量
+# Load environment variables
 from dotenv import load_dotenv
 env_file = Path(__file__).parent.parent / "secret" / ".env.development"
 if env_file.exists():
     load_dotenv(env_file)
 
-# 导入 Base
+# Import Base
 from app.core.database import Base
 
-# 导入所有模型以便 Alembic 能够检测到它们
+# Import all models so Alembic can detect them
 from app.models.user import User
 from app.models.token import RefreshToken, VerificationCode
 
-# Alembic Config 对象
+# Alembic Config object
 config = context.config
 
-# 配置日志
+# Configure logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# 设置 MetaData
+# Set MetaData
 target_metadata = Base.metadata
 
 
-# 从环境变量获取数据库 URL
+# Get database URL from environment variables
 def get_url():
-    """从环境变量获取数据库 URL"""
-    url = os.getenv("DATABASE_URL", "sqlite:///./app.db")
-    # 转换为异步驱动
+    """Get database URL from environment variables"""
+    url = os.getenv("DATABASE_URL", "{default_url}")
+    # Convert to async driver
     if url.startswith("mysql://"):
         url = url.replace("mysql://", "mysql+aiomysql://", 1)
     elif url.startswith("postgresql://"):
@@ -280,13 +302,13 @@ def get_url():
 
 
 def run_migrations_offline() -> None:
-    """在离线模式下运行迁移（同步模式）"""
+    """Run migrations in offline mode (sync mode)"""
     url = get_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        dialect_opts={{"paramstyle": "named"}},
     )
 
     with context.begin_transaction():
@@ -294,7 +316,7 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection):
-    """执行迁移的辅助函数"""
+    """Helper function to execute migrations"""
     context.configure(
         connection=connection,
         target_metadata=target_metadata
@@ -305,7 +327,7 @@ def do_run_migrations(connection):
 
 
 async def run_migrations_online() -> None:
-    """在在线模式下运行迁移（异步模式）"""
+    """Run migrations in online mode (async mode)"""
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = get_url()
     
@@ -334,7 +356,7 @@ else:
         )
     
     def _create_script_mako(self) -> None:
-        """创建迁移脚本模板"""
+        """Create migration script template"""
         content = '''"""${message}
 
 Revision ID: ${up_revision}
@@ -344,6 +366,7 @@ Create Date: ${create_date}
 """
 from alembic import op
 import sqlalchemy as sa
+import sqlmodel
 ${imports if imports else ""}
 
 # revision identifiers, used by Alembic.
@@ -368,88 +391,88 @@ def downgrade() -> None:
         )
     
     def _create_alembic_readme(self) -> None:
-        """创建 Alembic 使用说明"""
-        content = '''# Alembic 数据库迁移
+        """Create Alembic usage guide"""
+        content = '''# Alembic Database Migration
 
-这个目录包含数据库迁移脚本。
+This directory contains database migration scripts.
 
-## 安装依赖
+## Install Dependencies
 
-确保已安装 Alembic：
+Make sure Alembic is installed:
 
 ```bash
 pip install alembic
-# 或
+# or
 uv add alembic
 ```
 
-## 使用方法
+## Usage
 
-### 创建新的迁移
+### Create New Migration
 
 ```bash
-# 自动生成迁移（推荐）
-alembic revision --autogenerate -m "描述你的更改"
+# Auto-generate migration (recommended)
+alembic revision --autogenerate -m "describe your changes"
 
-# 手动创建空迁移
-alembic revision -m "描述你的更改"
+# Manually create empty migration
+alembic revision -m "describe your changes"
 ```
 
-### 应用迁移
+### Apply Migrations
 
 ```bash
-# 升级到最新版本
+# Upgrade to latest version
 alembic upgrade head
 
-# 升级一个版本
+# Upgrade one version
 alembic upgrade +1
 
-# 升级到特定版本
+# Upgrade to specific version
 alembic upgrade <revision_id>
 ```
 
-### 回滚迁移
+### Rollback Migrations
 
 ```bash
-# 回滚一个版本
+# Rollback one version
 alembic downgrade -1
 
-# 回滚到特定版本
+# Rollback to specific version
 alembic downgrade <revision_id>
 
-# 回滚所有
+# Rollback all
 alembic downgrade base
 ```
 
-### 查看迁移历史
+### View Migration History
 
 ```bash
-# 查看当前版本
+# View current version
 alembic current
 
-# 查看迁移历史
+# View migration history
 alembic history
 
-# 查看详细历史
+# View detailed history
 alembic history --verbose
 ```
 
-## 配置
+## Configuration
 
-数据库连接 URL 从环境变量 `DATABASE_URL` 读取。
+Database connection URL is read from the `DATABASE_URL` environment variable.
 
-请在 `.env` 文件中设置：
+Please set it in your `.env` file:
 
 ```
 DATABASE_URL=postgresql://user:password@localhost/dbname
 ```
 
-## 注意事项
+## Notes
 
-1. 在创建迁移前，确保所有模型都已导入到 `alembic/env.py` 中
-2. 使用 `--autogenerate` 时，Alembic 会自动检测模型变化
-3. 始终检查生成的迁移脚本，确保符合预期
-4. 在生产环境应用迁移前，先在开发环境测试
+1. Before creating migrations, ensure all models are imported in `alembic/env.py`
+2. When using `--autogenerate`, Alembic will automatically detect model changes
+3. Always review generated migration scripts to ensure they meet expectations
+4. Test migrations in development environment before applying to production
 '''
         
         self.file_ops.create_markdown_file(

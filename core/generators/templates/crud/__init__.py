@@ -1,1 +1,1 @@
-"""CRUD 操作生成器"""
+"""CRUD operation generators"""

@@ -1,13 +1,13 @@
-"""安全管理文件生成器"""
+"""Security management file generator"""
 from pathlib import Path
 from .base import BaseTemplateGenerator
 
 
 class SecurityGenerator(BaseTemplateGenerator):
-    """安全管理器生成器"""
+    """Security management generator"""
     
     def generate(self) -> None:
-        """生成 app/core/security.py"""
+        """generate app/core/security.py"""
         if not self.config_reader.has_auth():
             return
         
@@ -29,16 +29,16 @@ class SecurityGenerator(BaseTemplateGenerator):
         
         self.file_ops.create_python_file(
             file_path="app/core/security.py",
-            docstring="安全管理模块 - 密码验证、哈希和 JWT 管理",
+            docstring="Security management module - Password validation, hashing and JWT management",
             imports=imports,
             content=content,
             overwrite=True
         )
     
     def _generate_security_content(self, has_refresh_token: bool) -> str:
-        """生成安全管理器内容"""
+        """Generate security management content"""
         
-        # 密码验证器
+        # Password validator
         password_validator = '''logger = logger_manager.get_logger(__name__)
 
 
@@ -97,7 +97,7 @@ class PasswordValidator:
             raise ValueError("Password must contain at least one special character.")
 '''
         
-        # 密码哈希器
+        # Passwordhashgenerator
         password_hasher = '''
 
 class PasswordHasher:
@@ -105,13 +105,13 @@ class PasswordHasher:
     
     def __init__(self):
         self.logger = logger_manager.get_logger(__name__)
-        # 使用Argon2 - 高性能配置
+        # useArgon2 - highperformanceconfiguration
         self.ph = argon2.PasswordHasher(
-            time_cost=2,  # 时间成本（迭代次数）- 优化性能
-            memory_cost=65536,  # 内存成本（64MB）
-            parallelism=1,  # 并行度
-            hash_len=32,  # 哈希长度
-            salt_len=16,  # 盐长度
+            time_cost=2,  # Time cost (iteration count) - optimize performance
+            memory_cost=65536,  # Memory cost (64MB)
+            parallelism=1,  # Parallelism
+            hash_len=32,  # Hash length
+            salt_len=16,  # Salt length
         )
         self.logger.info("Using Argon2 for password hashing")
     
@@ -138,7 +138,7 @@ class PasswordHasher:
             return False
 '''
         
-        # JWT 管理器 - 根据是否有 refresh_token 生成不同版本
+        # JWT manager - generate different version based on whether refresh_token exists
         if has_refresh_token:
             jwt_manager = '''
 
@@ -179,7 +179,7 @@ class JWTManager:
     ) -> tuple[str, datetime]:
         """Internal method for token creation"""
         exp_time = datetime.now(timezone.utc) + timedelta(seconds=expires_in_seconds)
-        # 转换为UTC时间戳
+        # Convert to UTC timestamp
         payload = {
             **data,
             "exp": int(exp_time.timestamp()),
@@ -226,7 +226,7 @@ class JWTManager:
         return None
 '''
         else:
-            # 不包含 refresh_token 的版本
+            # Version without refresh_token
             jwt_manager = '''
 
 class JWTManager:
@@ -260,7 +260,7 @@ class JWTManager:
     ) -> tuple[str, datetime]:
         """Internal method for token creation"""
         exp_time = datetime.now(timezone.utc) + timedelta(seconds=expires_in_seconds)
-        # 转换为UTC时间戳
+        # Convert to UTC timestamp
         payload = {
             **data,
             "exp": int(exp_time.timestamp()),
@@ -307,7 +307,7 @@ class JWTManager:
         return None
 '''
         
-        # 安全管理器 - 根据是否有 refresh_token 生成不同版本
+        # Security manager - generate different version based on whether refresh_token exists
         if has_refresh_token:
             security_manager = '''
 
@@ -356,7 +356,7 @@ class SecurityManager:
 security_manager = SecurityManager(settings)
 '''
         else:
-            # 不包含 refresh_token 的版本
+            # Version without refresh_token
             security_manager = '''
 
 class SecurityManager:
@@ -399,10 +399,10 @@ class SecurityManager:
 security_manager = SecurityManager(settings)
 '''
         
-        # 便捷函数
+        # Convenience functions
         convenience_functions = '''
 
-# 便捷函数（向后兼容）
+# Convenience functions (backward compatible)
 def get_password_hash(password: str) -> str:
     """Hash password - convenience function"""
     return security_manager.hash_password(password)

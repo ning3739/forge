@@ -1,21 +1,21 @@
-"""用户路由生成器"""
+"""user routesgenerategenerator"""
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
 class UserRouterGenerator(BaseTemplateGenerator):
-    """用户路由文件生成器"""
+    """user routesFile generator"""
     
     def generate(self) -> None:
-        """生成用户路由文件"""
-        # 只有启用认证才生成
+        """generateuser routesfile"""
+        # Only generate if authentication is enabled
         if not self.config_reader.has_auth():
             return
         
         self._generate_user_router()
     
     def _generate_user_router(self) -> None:
-        """生成用户路由"""
+        """generateuser routes"""
         imports = [
             "from fastapi import APIRouter, Depends, HTTPException, status",
             "from sqlalchemy.ext.asyncio import AsyncSession",
@@ -35,13 +35,13 @@ class UserRouterGenerator(BaseTemplateGenerator):
 async def get_current_user_info(
     current_user: User = Depends(get_current_user)
 ):
-    """获取当前用户信息
+    """Getcurrentuserinformation
     
     Args:
-        current_user: 当前登录用户
+        current_user: currentloginuser
         
     Returns:
-        用户信息
+        userinformation
     """
     return current_user
 
@@ -52,20 +52,20 @@ async def update_current_user(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """更新当前用户信息
+    """updatecurrentuserinformation
     
     Args:
-        user_update: 用户更新数据
-        current_user: 当前登录用户
-        db: 数据库会话
+        user_update: user update data
+        current_user: currentloginuser
+        db: Database session
         
     Returns:
-        更新后的用户信息
+        updateafteruserinformation
         
     Raises:
-        HTTPException: 更新失败
+        HTTPException: updatefailure
     """
-    # 如果要更新用户名，检查是否已存在
+    # ifupdateUsername，Checkwhetheralreadyexists
     if user_update.username and user_update.username != current_user.username:
         existing_user = await user_crud.get_by_username(db, user_update.username)
         if existing_user:
@@ -74,7 +74,7 @@ async def update_current_user(
                 detail="Username already taken"
             )
     
-    # 如果要更新邮箱，检查是否已存在
+    # ifupdateEmail，Checkwhetheralreadyexists
     if user_update.email and user_update.email != current_user.email:
         existing_user = await user_crud.get_by_email(db, user_update.email)
         if existing_user:
@@ -99,14 +99,14 @@ async def delete_current_user(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """删除当前用户账户
+    """Delete current user account
     
     Args:
-        current_user: 当前登录用户
-        db: 数据库会话
+        current_user: currentloginuser
+        db: Database session
         
     Raises:
-        HTTPException: 删除失败
+        HTTPException: Deletefailure
     """
     success = await user_crud.delete(db, current_user.id)
     
@@ -117,7 +117,7 @@ async def delete_current_user(
         )
 
 
-# ========== 管理员路由 ==========
+# ========== Admin routes ==========
 
 @router.get("/", response_model=List[UserResponse])
 async def list_users(
@@ -126,16 +126,16 @@ async def list_users(
     current_user: User = Depends(get_current_superuser),
     db: AsyncSession = Depends(get_db)
 ):
-    """获取用户列表（仅管理员）
+    """Get user list (admin only)
     
     Args:
-        skip: 跳过的记录数
-        limit: 返回的最大记录数
-        current_user: 当前登录的管理员用户
-        db: 数据库会话
+        skip: skip count
+        limit: return max count
+        current_user: current logged in admin user
+        db: Database session
         
     Returns:
-        用户列表
+        userlist
     """
     users = await user_crud.get_all(db, skip=skip, limit=limit)
     return users
@@ -147,18 +147,18 @@ async def get_user(
     current_user: User = Depends(get_current_superuser),
     db: AsyncSession = Depends(get_db)
 ):
-    """获取指定用户信息（仅管理员）
+    """Get specified user information (admin only)
     
     Args:
-        user_id: 用户 ID
-        current_user: 当前登录的管理员用户
-        db: 数据库会话
+        user_id: user ID
+        current_user: current logged in admin user
+        db: Database session
         
     Returns:
-        用户信息
+        userinformation
         
     Raises:
-        HTTPException: 用户不存在
+        HTTPException: user does not exist
     """
     user = await user_crud.get_by_id(db, user_id)
     
@@ -178,19 +178,19 @@ async def update_user(
     current_user: User = Depends(get_current_superuser),
     db: AsyncSession = Depends(get_db)
 ):
-    """更新指定用户信息（仅管理员）
+    """Update specified user information (admin only)
     
     Args:
-        user_id: 用户 ID
-        user_update: 用户更新数据
-        current_user: 当前登录的管理员用户
-        db: 数据库会话
+        user_id: user ID
+        user_update: user update data
+        current_user: current logged in admin user
+        db: Database session
         
     Returns:
-        更新后的用户信息
+        updateafteruserinformation
         
     Raises:
-        HTTPException: 用户不存在或更新失败
+        HTTPException: user does not exist or update failed
     """
     updated_user = await user_crud.update(db, user_id, user_update)
     
@@ -209,17 +209,17 @@ async def delete_user(
     current_user: User = Depends(get_current_superuser),
     db: AsyncSession = Depends(get_db)
 ):
-    """删除指定用户（仅管理员）
+    """Delete specified user (admin only)
     
     Args:
-        user_id: 用户 ID
-        current_user: 当前登录的管理员用户
-        db: 数据库会话
+        user_id: user ID
+        current_user: current logged in admin user
+        db: Database session
         
     Raises:
-        HTTPException: 用户不存在或删除失败
+        HTTPException: user does not exist or delete failed
     """
-    # 防止管理员删除自己
+    # Prevent admin from deleting themselves
     if user_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -237,7 +237,7 @@ async def delete_user(
         
         self.file_ops.create_python_file(
             file_path="app/routers/v1/users.py",
-            docstring="用户管理路由",
+            docstring="usermanagementrouter",
             imports=imports,
             content=content,
             overwrite=True

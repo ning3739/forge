@@ -1,1 +1,1 @@
-"""业务逻辑服务生成器"""
+"""Business logic service generators"""

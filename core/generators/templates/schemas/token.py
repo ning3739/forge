@@ -1,20 +1,20 @@
-"""Token Schema 生成器"""
+"""Token Schema generategenerator"""
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
 class TokenSchemaGenerator(BaseTemplateGenerator):
-    """Token Schema 文件生成器"""
+    """Token Schema File generator"""
     
     def generate(self) -> None:
-        """生成 Token Schema 文件
+        """generate Token Schema file
         
-        注意：此生成器由 Orchestrator 在 Complete JWT Auth 时调用
+        Note: This generator is called by Orchestrator when Complete JWT Auth is enabled
         """
         self._generate_token_schemas()
     
     def _generate_token_schemas(self) -> None:
-        """生成 Token Schemas"""
+        """generate Token Schemas"""
         imports = [
             "from datetime import datetime",
             "from typing import Optional",
@@ -24,13 +24,13 @@ class TokenSchemaGenerator(BaseTemplateGenerator):
         content = '''# ========== Refresh Token Schemas ==========
 
 class RefreshTokenBase(BaseModel):
-    """刷新令牌基础 Schema"""
+    """refreshtokenbase Schema"""
     device_name: Optional[str] = Field(None, max_length=200)
     device_type: Optional[str] = Field(None, max_length=50)
 
 
 class RefreshTokenCreate(RefreshTokenBase):
-    """刷新令牌创建 Schema"""
+    """refreshtokenCreate Schema"""
     user_id: int
     token: str
     expires_at: datetime
@@ -39,7 +39,7 @@ class RefreshTokenCreate(RefreshTokenBase):
 
 
 class RefreshTokenResponse(RefreshTokenBase):
-    """刷新令牌响应 Schema"""
+    """refreshtokenresponse Schema"""
     id: int
     user_id: int
     expires_at: datetime
@@ -52,8 +52,8 @@ class RefreshTokenResponse(RefreshTokenBase):
 
 
 class RefreshTokenRequest(BaseModel):
-    """刷新令牌请求 Schema"""
-    refresh_token: str = Field(..., description="刷新令牌")
+    """refreshtokenrequest Schema"""
+    refresh_token: str = Field(..., description="refreshtoken")
     
     model_config = ConfigDict(
         json_schema_extra={
@@ -65,19 +65,19 @@ class RefreshTokenRequest(BaseModel):
 
 
 class RefreshTokenRevoke(BaseModel):
-    """撤销刷新令牌 Schema"""
-    token: Optional[str] = Field(None, description="要撤销的令牌，不提供则撤销所有")
+    """Revoke refresh token Schema"""
+    token: Optional[str] = Field(None, description="Revoke token, if not provided revoke all")
 
 
 # ========== Verification Code Schemas ==========
 
 class VerificationCodeBase(BaseModel):
-    """验证码基础 Schema"""
-    code_type: str = Field(..., description="验证码类型: email_verification 或 password_reset")
+    """Verification code base Schema"""
+    code_type: str = Field(..., description="Verification code type: email_verification or password_reset")
 
 
 class VerificationCodeCreate(VerificationCodeBase):
-    """验证码创建 Schema"""
+    """Verification code create Schema"""
     user_id: int
     code: str
     expires_at: datetime
@@ -85,7 +85,7 @@ class VerificationCodeCreate(VerificationCodeBase):
 
 
 class VerificationCodeResponse(VerificationCodeBase):
-    """验证码响应 Schema"""
+    """Verification code response Schema"""
     id: int
     user_id: int
     expires_at: datetime
@@ -98,9 +98,9 @@ class VerificationCodeResponse(VerificationCodeBase):
 
 
 class VerificationCodeVerify(BaseModel):
-    """验证码验证 Schema"""
+    """Verification code verify Schema"""
     code: str = Field(..., min_length=4, max_length=10)
-    code_type: str = Field(..., description="验证码类型")
+    code_type: str = Field(..., description="Verification code type")
     
     model_config = ConfigDict(
         json_schema_extra={
@@ -114,7 +114,7 @@ class VerificationCodeVerify(BaseModel):
         
         self.file_ops.create_python_file(
             file_path="app/schemas/token.py",
-            docstring="Token 相关 Pydantic Schemas - Complete JWT Auth",
+            docstring="Token related Pydantic Schemas - Complete JWT Auth",
             imports=imports,
             content=content,
             overwrite=True

@@ -1,35 +1,35 @@
-"""项目配置工具类"""
+"""Project configuration utility class"""
 import json
 from pathlib import Path
 from typing import Optional, Dict, Any
 
 
 class ProjectConfig:
-    """项目配置工具类"""
+    """Project configuration utility class"""
     
     @staticmethod
     def exists(project_path: Path) -> bool:
         """
-        检查项目配置是否存在
+        Check if project configuration exists
         
         Args:
-            project_path: 项目路径
+            project_path: Project path
         
         Returns:
-            配置文件是否存在
+            Whether configuration file exists
         """
         return (project_path / ".forge" / "config.json").exists()
     
     @staticmethod
     def load(project_path: Path) -> Optional[Dict[str, Any]]:
         """
-        加载项目配置
+        Load project configuration
         
         Args:
-            project_path: 项目路径
+            project_path: Project path
         
         Returns:
-            配置字典，如果不存在或无效则返回 None
+            Configuration dictionary, or None if not exists or invalid
         """
         config_file = project_path / ".forge" / "config.json"
         if not config_file.exists():

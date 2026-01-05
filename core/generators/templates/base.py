@@ -1,25 +1,24 @@
-"""基础模板生成器"""
+"""Base template generator"""
 from pathlib import Path
-from abc import ABC, abstractmethod
-from core.utils import FileOperations
 from core.config_reader import ConfigReader
+from core.utils import FileOperations
 
 
-class BaseTemplateGenerator(ABC):
-    """基础模板生成器抽象类"""
+class BaseTemplateGenerator:
+    """Base generator class for all code generators"""
     
     def __init__(self, project_path: Path, config_reader: ConfigReader):
-        """初始化模板生成器
+        """
+        Initialize base generator
         
         Args:
-            project_path: 项目根目录路径
-            config_reader: 配置读取器实例
+            project_path: Project root directory path
+            config_reader: Configuration reader instance
         """
         self.project_path = Path(project_path)
         self.config_reader = config_reader
         self.file_ops = FileOperations(base_path=project_path)
     
-    @abstractmethod
     def generate(self) -> None:
-        """生成文件 - 子类必须实现"""
-        pass
+        """generate files - must be implemented by subclasses"""
+        raise NotImplementedError("Subclasses must implement generate() method")

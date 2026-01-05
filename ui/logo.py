@@ -1,4 +1,4 @@
-"""Logo渲染模块"""
+"""Logo rendering module"""
 from rich.console import Group, RenderableType
 from rich.text import Text
 from rich.align import Align
@@ -6,7 +6,7 @@ from typing import List
 
 from ui.colors import get_colors, get_gradients, console
 
-# 常量
+# Constants
 VERSION = "v0.1.0"
 AUTHOR = "@ningli"
 NARROW_THRESHOLD = 60
@@ -23,7 +23,7 @@ ASCII_LOGO = [
 
 
 def create_ascii_logo() -> Text:
-    """创建 ASCII 艺术 Logo"""
+    """Create ASCII art Logo"""
     logo = Text()
     colors = get_colors()
     gradients = get_gradients()
@@ -36,7 +36,7 @@ def create_ascii_logo() -> Text:
 
 
 def create_subtitle() -> Text:
-    """创建副标题"""
+    """Create subtitle"""
     colors = get_colors()
     content = Text()
     indent = "  "
@@ -51,14 +51,14 @@ def create_subtitle() -> Text:
 
 
 def create_version_badge() -> Text:
-    """创建版本标签"""
+    """Create version badge"""
     colors = get_colors()
     badge = Text()
     indent = "  "
 
     badge.append(indent)
 
-    # 处理版本号
+    # Handle version number
     version_str = VERSION.lstrip("v")
     badge.append("v", style=f"dim {colors.text_secondary}")
     badge.append(version_str, style=f"bold {colors.text_primary}")
@@ -71,7 +71,7 @@ def create_version_badge() -> Text:
 
 
 def get_logo_renderable() -> RenderableType:
-    """获取 Logo 的 renderable 对象"""
+    """Get Logo renderable object"""
     renderables: List[RenderableType] = [
         Align.left(create_ascii_logo()),
         Align.left(create_subtitle()),
@@ -83,7 +83,7 @@ def get_logo_renderable() -> RenderableType:
 
 
 def show_logo(clear_screen: bool = True) -> None:
-    """显示 Logo"""
+    """Show Logo"""
     if clear_screen:
         console.clear()
     console.print()

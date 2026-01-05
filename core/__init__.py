@@ -1,4 +1,4 @@
-"""Core模块 - 核心业务逻辑"""
+"""Core module - core business logic"""
 from .config_reader import ConfigReader
 from .project_generator import ProjectGenerator
 

@@ -1,34 +1,45 @@
-"""配置文件读取器模块"""
+"""Configuration file reader module"""
 import json
 from pathlib import Path
 from typing import Dict, Any, Optional
 
 
+class ConfigValidationError(Exception):
+    """Configuration validation error"""
+    pass
+
+
 class ConfigReader:
-    """配置文件读取器类
+    """Configuration file reader
     
-    负责读取和解析 .forge/config.json 配置文件
+    Responsible for reading and parsing .forge/config.json configuration file
     """
     
+    # Configuration validation rules
+    REQUIRED_FIELDS = ['project_name', 'database', 'features']
+    VALID_DATABASE_TYPES = ['PostgreSQL', 'MySQL']
+    VALID_ORM_TYPES = ['SQLModel', 'SQLAlchemy']
+    VALID_AUTH_TYPES = ['basic', 'complete']
+    
     def __init__(self, project_path: Path):
-        """初始化配置读取器
+        """Initialize configuration reader
         
         Args:
-            project_path: 项目根目录路径
+            project_path: Project root directory path
         """
         self.project_path = Path(project_path)
         self.config: Optional[Dict[str, Any]] = None
         self.config_file = self.project_path / ".forge" / "config.json"
         
     def load_config(self) -> Dict[str, Any]:
-        """从 .forge/config.json 读取配置
+        """Load configuration from .forge/config.json
         
         Returns:
-            配置字典
+            Configuration dictionary
             
         Raises:
-            FileNotFoundError: 配置文件不存在
-            json.JSONDecodeError: 配置文件格式错误
+            FileNotFoundError: Configuration file does not exist
+            json.JSONDecodeError: Configuration file format error
         """
         if not self.config_file.exists():
             raise FileNotFoundError(
@@ -36,127 +47,172 @@ class ConfigReader:
                 f"Please run 'forge init' first to create the configuration."
             )
         
-        with open(self.config_file, 'r', encoding='utf-8') as f:
-            self.config = json.load(f)
+        try:
+            with open(self.config_file, 'r', encoding='utf-8') as f:
+                self.config = json.load(f)
+        except json.JSONDecodeError as e:
+            raise ConfigValidationError(
+                f"Invalid JSON in configuration file: {e}"
+            )
         
         return self.config
     
     def validate_config(self) -> bool:
-        """验证配置文件的完整性
+        """Validate configuration file integrity
         
         Returns:
-            配置是否有效
+            Whether configuration is valid
+            
+        Raises:
+            ConfigValidationError: Configuration validation failed
         """
         if not self.config:
-            return False
+            raise ConfigValidationError("Configuration not loaded")
         
-        # 检查必需字段
-        required_fields = ['project_name', 'features']
-        for field in required_fields:
-            if field not in self.config:
-                raise ValueError(f"Missing required field in config: {field}")
+        # Check required fields
+        self._validate_required_fields()
+        
+        # Validate database configuration
+        self._validate_database_config()
+        
+        # Validate authentication configuration
+        self._validate_auth_config()
         
         return True
     
+    def _validate_required_fields(self) -> None:
+        """Validate required fields"""
+        missing_fields = [
+            field for field in self.REQUIRED_FIELDS
+            if field not in self.config
+        ]
+        if missing_fields:
+            raise ConfigValidationError(
+                f"Missing required fields: {', '.join(missing_fields)}"
+            )
+    
+    def _validate_database_config(self) -> None:
+        """Validate database configuration"""
+        db_config = self.config.get('database')
+        if not db_config:
+            raise ConfigValidationError("Database configuration is required")
+        
+        if 'type' not in db_config:
+            raise ConfigValidationError("Database type is required")
+        
+        if db_config['type'] not in self.VALID_DATABASE_TYPES:
+            raise ConfigValidationError(
+                f"Invalid database type: {db_config['type']}. "
+                f"Valid types: {', '.join(self.VALID_DATABASE_TYPES)}"
+            )
+        
+        if 'orm' not in db_config:
+            raise ConfigValidationError("ORM type is required")
+        
+        if db_config['orm'] not in self.VALID_ORM_TYPES:
+            raise ConfigValidationError(
+                f"Invalid ORM type: {db_config['orm']}. "
+                f"Valid types: {', '.join(self.VALID_ORM_TYPES)}"
+            )
+    
+    def _validate_auth_config(self) -> None:
+        """Validate authentication configuration"""
+        features = self.config.get('features', {})
+        auth_config = features.get('auth', {})
+        auth_type = auth_config.get('type')
+        
+        if not auth_type or auth_type == 'none':
+            raise ConfigValidationError(
+                "Authentication is required but not configured"
+            )
+        
+        if auth_type not in self.VALID_AUTH_TYPES:
+            raise ConfigValidationError(
+                f"Invalid authentication type: {auth_type}. "
+                f"Valid types: {', '.join(self.VALID_AUTH_TYPES)}"
+            )
+    
+    # ========== Configuration Getter Methods ==========
+    
     def get_project_name(self) -> str:
-        """获取项目名称"""
+        """Get project name"""
         return self.config.get('project_name', 'my-project')
     
-    def get_database_config(self) -> Optional[Dict[str, str]]:
-        """获取数据库配置
-        
-        Returns:
-            数据库配置字典，如果未配置数据库则返回 None
-        """
-        return self.config.get('database')
+    def get_database_config(self) -> Dict[str, str]:
+        """Get database configuration"""
+        db_config = self.config.get('database')
+        if not db_config:
+            raise ConfigValidationError("Database configuration is required")
+        return db_config
     
-    def get_database_type(self) -> Optional[str]:
-        """获取数据库类型
-        
-        Returns:
-            数据库类型 (PostgreSQL/MySQL) 或 None
-        """
-        db_config = self.get_database_config()
-        return db_config.get('type') if db_config else None
+    def get_database_type(self) -> str:
+        """Get database type"""
+        return self.get_database_config()['type']
     
-    def get_orm_type(self) -> Optional[str]:
-        """获取 ORM 类型
-        
-        Returns:
-            ORM 类型 (SQLModel/SQLAlchemy) 或 None
-        """
-        db_config = self.get_database_config()
-        return db_config.get('orm') if db_config else None
+    def get_orm_type(self) -> str:
+        """Get ORM type"""
+        return self.get_database_config()['orm']
     
     def get_migration_tool(self) -> Optional[str]:
-        """获取迁移工具
-        
-        Returns:
-            迁移工具名称 (Alembic) 或 None
-        """
-        db_config = self.get_database_config()
-        return db_config.get('migration_tool') if db_config else None
+        """Get migration tool"""
+        return self.get_database_config().get('migration_tool')
     
     def has_migration(self) -> bool:
-        """检查是否启用数据库迁移"""
+        """Check if database migration is enabled"""
         return self.get_migration_tool() is not None
     
     def get_features(self) -> Dict[str, Any]:
-        """获取功能配置"""
+        """Get feature configuration"""
         return self.config.get('features', {})
     
-    def has_database(self) -> bool:
-        """检查是否配置了数据库"""
-        return self.get_database_config() is not None
-    
     def has_auth(self) -> bool:
-        """检查是否启用认证"""
-        features = self.get_features()
-        auth_config = features.get('auth', {})
-        return auth_config.get('type') != 'none'
+        """Check if authentication is enabled (authentication is now required)"""
+        return True
     
-    def get_auth_type(self) -> Optional[str]:
-        """获取认证类型 (basic/complete/none)"""
+    def get_auth_type(self) -> str:
+        """Get authentication type"""
         features = self.get_features()
         auth_config = features.get('auth', {})
-        return auth_config.get('type')
+        auth_type = auth_config.get('type')
+        if not auth_type or auth_type == 'none':
+            raise ConfigValidationError(
+                "Authentication is required but not configured"
+            )
+        return auth_type
     
     def has_refresh_token(self) -> bool:
-        """检查是否启用 Refresh Token"""
+        """Check if Refresh Token is enabled"""
         features = self.get_features()
         auth_config = features.get('auth', {})
         return auth_config.get('refresh_token', False)
     
     def has_cors(self) -> bool:
-        """检查是否启用 CORS"""
-        features = self.get_features()
-        return features.get('cors', False)
+        """Check if CORS is enabled"""
+        return self.get_features().get('cors', False)
     
     def has_dev_tools(self) -> bool:
-        """检查是否包含开发工具"""
-        features = self.get_features()
-        return features.get('dev_tools', False)
+        """Check if development tools are included"""
+        return self.get_features().get('dev_tools', False)
     
     def has_testing(self) -> bool:
-        """检查是否包含测试工具"""
-        features = self.get_features()
-        return features.get('testing', False)
+        """Check if testing tools are included"""
+        return self.get_features().get('testing', False)
     
     def has_docker(self) -> bool:
-        """检查是否包含 Docker 配置"""
-        features = self.get_features()
-        return features.get('docker', False)
+        """Check if Docker configuration is included"""
+        return self.get_features().get('docker', False)
     
     def get_metadata(self) -> Optional[Dict[str, Any]]:
-        """获取元数据信息"""
+        """Get metadata information"""
         return self.config.get('metadata')
     
     def get_created_at(self) -> Optional[str]:
-        """获取配置创建时间"""
+        """Get configuration creation time"""
         metadata = self.get_metadata()
         return metadata.get('created_at') if metadata else None
     
     def get_forge_version(self) -> Optional[str]:
-        """获取 Forge 版本"""
+        """Get Forge version"""
         metadata = self.get_metadata()
         return metadata.get('forge_version') if metadata else None
+

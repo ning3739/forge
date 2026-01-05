@@ -1,12 +1,12 @@
-"""Core Dependencies 生成器 - 生成 app/core/deps.py"""
+"""Core Dependencies generategenerator - generate app/core/deps.py"""
 from ..base import BaseTemplateGenerator
 
 
 class CoreDepsGenerator(BaseTemplateGenerator):
-    """生成 app/core/deps.py - 核心依赖注入函数"""
+    """generate app/core/deps.py - coredependenciesinjectionfunction"""
     
     def generate(self) -> None:
-        """生成 app/core/deps.py"""
+        """generate app/core/deps.py"""
         if not self.config_reader.has_auth():
             return
         
@@ -21,7 +21,7 @@ class CoreDepsGenerator(BaseTemplateGenerator):
             "from app.models.user import User",
         ]
         
-        content = '''# HTTP Bearer 认证方案
+        content = '''# HTTP Bearer authenticationscheme
 security = HTTPBearer(auto_error=False)
 
 
@@ -29,17 +29,17 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    """获取当前认证用户
+    """GetcurrentAuthenticate user
     
     Args:
-        credentials: HTTP Bearer 认证凭证
-        db: 数据库会话
+        credentials: HTTP Bearer authenticationcredentials
+        db: Database session
     
     Returns:
-        User: 当前用户对象
+        User: currentuserobject
     
     Raises:
-        HTTPException: 401 - 未认证或认证失败
+        HTTPException: 401 - Not authenticated or authentication failed
     """
     if not credentials:
         raise HTTPException(
@@ -50,7 +50,7 @@ async def get_current_user(
     
     token = credentials.credentials
     
-    # 解码 token
+    # decode token
     payload = security_manager.decode_token(token)
     if not payload:
         raise HTTPException(
@@ -67,7 +67,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # 从数据库获取用户
+    # Get user from database
     user = await user_crud.get_by_id(db, user_id)
     if user is None:
         raise HTTPException(
@@ -87,16 +87,16 @@ async def get_current_user(
 async def get_current_superuser(
     current_user: User = Depends(get_current_user),
 ) -> User:
-    """获取当前超级用户
+    """Get current superuser
     
     Args:
-        current_user: 当前用户
+        current_user: currentuser
     
     Returns:
-        User: 当前超级用户对象
+        User: Current superuser object
     
     Raises:
-        HTTPException: 403 - 权限不足
+        HTTPException: 403 - Insufficient permissions
     """
     if not current_user.is_superuser:
         raise HTTPException(
@@ -108,7 +108,7 @@ async def get_current_superuser(
         
         self.file_ops.create_python_file(
             file_path="app/core/deps.py",
-            docstring="核心依赖注入函数",
+            docstring="coredependenciesinjectionfunction",
             imports=imports,
             content=content,
             overwrite=True
