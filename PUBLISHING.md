@@ -213,66 +213,56 @@ Use this checklist before publishing:
 
 ## Publishing
 
-### Method 1: GitHub Release (Recommended)
+### Automated Release Process
 
-**Best for production releases.**
+**The project uses fully automated CI/CD:**
 
 1. **Update version** in `pyproject.toml`:
    ```toml
-   version = "0.1.1"  # Increment version
+   version = "0.1.2"
    ```
 
-2. **Commit and push**:
+2. **Update** `CHANGELOG.md` with changes:
+   ```markdown
+   ## [0.1.2] - 2025-01-06
+   
+   ### Added
+   - New feature
+   
+   ### Fixed
+   - Bug fix
+   ```
+
+3. **Commit and push to main**:
    ```bash
-   git add pyproject.toml
-   git commit -m "Bump version to 0.1.1"
-   git push
+   git add pyproject.toml CHANGELOG.md
+   git commit -m "Bump version to 0.1.2"
+   git push origin main
    ```
 
-3. **Create GitHub Release**:
-   - Go to: **Releases** → **"Create a new release"**
-   - **Tag**: `v0.1.1` (create new tag)
-   - **Title**: `v0.1.1` or `Release 0.1.1`
-   - **Description**: Describe changes (see CHANGELOG.md)
-   - Click **"Publish release"**
+4. **Automatic process** (no manual steps needed):
+   - ✅ CI tests run on Python 3.9-3.13
+   - ✅ Package is built and validated
+   - ✅ Published to PyPI automatically
+   - ✅ Git tag is created automatically
+   - ✅ GitHub Release is created with changelog
 
-4. **Automatic Publishing**:
-   - GitHub Actions automatically triggers
-   - Builds the package
-   - Publishes to PyPI
-   - Check: **Actions** tab for progress
+**That's it!** Just push to main and everything happens automatically.
 
-5. **Verify**:
-   ```bash
-   pip install ningfastforge
-   forge --version
-   ```
+### Version Management
 
-### Method 2: Manual Workflow (For Testing)
+The workflow automatically:
+- Detects version from `pyproject.toml`
+- Checks if version already published
+- Skips if version tag already exists
+- Creates tag and release after successful publish
 
-**Best for testing on Test PyPI.**
+### Monitoring
 
-1. **Push your code**:
-   ```bash
-   git add .
-   git commit -m "Prepare for testing"
-   git push
-   ```
-
-2. **Trigger workflow**:
-   - Go to: **Actions** → **"Publish to PyPI"**
-   - Click **"Run workflow"**
-   - Select branch
-   - ✅ Check **"Publish to Test PyPI"** (for testing)
-   - Click **"Run workflow"**
-
-3. **Test installation**:
-   ```bash
-   pip install --index-url https://test.pypi.org/simple/ \
-               --extra-index-url https://pypi.org/simple/ \
-               ningfastforge
-   forge --version
-   ```
+Watch the progress:
+- **Actions**: https://github.com/ning3739/forge/actions
+- **PyPI**: https://pypi.org/project/ningfastforge/
+- **Releases**: https://github.com/ning3739/forge/releases
 
 ---
 

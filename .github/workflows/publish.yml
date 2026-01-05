@@ -1,23 +1,53 @@
-name: Publish to PyPI
+name: CI and Publish
 
 on:
-  release:
-    types: [published]
-  workflow_dispatch:
-    inputs:
-      test_pypi:
-        description: 'Publish to Test PyPI instead of PyPI'
-        required: false
-        type: boolean
-        default: false
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build:
-    name: Build distribution
+  test:
+    name: Test on Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    
+    - name: Build package
+      run: python -m build
+    
+    - name: Check distribution
+      run: twine check dist/*
+    
+    - name: Test installation
+      run: |
+        pip install dist/*.whl
+        forge --version
+
+  build:
+    name: Build distribution
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -29,60 +59,106 @@ jobs:
         python -m pip install --upgrade pip
         pip install build twine
     
+    - name: Extract version from pyproject.toml
+      id: get_version
+      run: |
+        VERSION=$(grep "^version = " pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
+    
+    - name: Check if version tag exists
+      id: check_tag
+      run: |
+        if git rev-parse "v${{ steps.get_version.outputs.VERSION }}" >/dev/null 2>&1; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "Tag v${{ steps.get_version.outputs.VERSION }} already exists"
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+          echo "Tag v${{ steps.get_version.outputs.VERSION }} does not exist"
+        fi
+    
     - name: Build package
+      if: steps.check_tag.outputs.exists == 'false'
       run: python -m build
     
     - name: Check distribution
+      if: steps.check_tag.outputs.exists == 'false'
       run: twine check dist/*
     
     - name: Store the distribution packages
+      if: steps.check_tag.outputs.exists == 'false'
       uses: actions/upload-artifact@v4
       with:
         name: python-package-distributions
         path: dist/
 
-  publish-to-pypi:
+  publish:
     name: Publish to PyPI
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && !inputs.test_pypi)
-    needs:
-    - build
+    needs: build
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: pypi
-      url: https://pypi.org/p/forge
+      url: https://pypi.org/p/ningfastforge
     permissions:
       id-token: write
+      contents: write
     
     steps:
-    - name: Download all the dists
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Extract version
+      id: get_version
+      run: |
+        VERSION=$(grep "^version = " pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+    
+    - name: Check if version tag exists
+      id: check_tag
+      run: |
+        if git rev-parse "v${{ steps.get_version.outputs.VERSION }}" >/dev/null 2>&1; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Download distributions
+      if: steps.check_tag.outputs.exists == 'false'
       uses: actions/download-artifact@v4
       with:
         name: python-package-distributions
         path: dist/
     
     - name: Publish to PyPI
+      if: steps.check_tag.outputs.exists == 'false'
       uses: pypa/gh-action-pypi-publish@release/v1
-
-  publish-to-testpypi:
-    name: Publish to TestPyPI
-    if: github.event_name == 'workflow_dispatch' && inputs.test_pypi
-    needs:
-    - build
-    runs-on: ubuntu-latest
-    environment:
-      name: testpypi
-      url: https://test.pypi.org/p/forge
-    permissions:
-      id-token: write
     
-    steps:
-    - name: Download all the dists
-      uses: actions/download-artifact@v4
-      with:
-        name: python-package-distributions
-        path: dist/
+    - name: Create git tag
+      if: steps.check_tag.outputs.exists == 'false'
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git tag -a "v${{ steps.get_version.outputs.VERSION }}" -m "Release v${{ steps.get_version.outputs.VERSION }}"
+        git push origin "v${{ steps.get_version.outputs.VERSION }}"
     
-    - name: Publish to TestPyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+    - name: Extract changelog
+      if: steps.check_tag.outputs.exists == 'false'
+      id: changelog
+      run: |
+        VERSION=${{ steps.get_version.outputs.VERSION }}
+        sed -n "/## \[$VERSION\]/,/## \[/p" CHANGELOG.md | sed '$d' > release_notes.md
+        if [ ! -s release_notes.md ]; then
+          echo "Release v$VERSION" > release_notes.md
+        fi
+    
+    - name: Create GitHub Release
+      if: steps.check_tag.outputs.exists == 'false'
+      uses: softprops/action-gh-release@v1
       with:
-        repository-url: https://test.pypi.org/legacy/
+        tag_name: v${{ steps.get_version.outputs.VERSION }}
+        name: v${{ steps.get_version.outputs.VERSION }}
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
