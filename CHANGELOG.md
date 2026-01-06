@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2025-01-06
+
+### Changed
+- Updated documentation URLs to use http://127.0.0.1:8000
+- Updated author email address
+
 ## [0.1.1] - 2025-01-06
 
 ### Added

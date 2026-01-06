@@ -10,7 +10,7 @@ from ui.logo import show_logo
 from commands.init import init_command
 
 # Version constant
-VERSION = "0.1.0"
+VERSION = "0.1.2"
 
 # Create main application
 app = typer.Typer(
