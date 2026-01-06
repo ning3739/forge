@@ -67,9 +67,8 @@ uv run uvicorn app.main:app --reload
 ```
 
 Visit:
-- 🌐 API: http://localhost:8000
-- 📚 Docs: http://localhost:8000/docs
-- 📖 ReDoc: http://localhost:8000/redoc
+- 📚 Docs: http://127.0.0.1:8000/docs
+- 📖 ReDoc: http://127.0.0.1:8000/redoc
 
 ## 🏗️ Architecture
 

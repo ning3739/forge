@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
-    {name = "Ning", email = "ning3739@gmail.com"}
+    {name = "ning", email = "ln729500172@gmail.com"}
 ]
 keywords = ["fastapi", "cli", "scaffolding", "generator", "template"]
 classifiers = [
