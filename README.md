@@ -1,6 +1,20 @@
-# 🔥 Forge
+<div align="center">
+  <img src="assets/logo.png" alt="Forge Logo" width="480"/>
+</div>
 
-> A modern, interactive FastAPI project scaffolding CLI tool
+<br/>
+
+<div align="center">
+
+[![PyPI version](https://badge.fury.io/py/ningfastforge.svg)](https://badge.fury.io/py/ningfastforge)
+[![Python Versions](https://img.shields.io/pypi/pyversions/ningfastforge.svg)](https://pypi.org/project/ningfastforge/)
+[![Downloads](https://static.pepy.tech/badge/ningfastforge)](https://pepy.tech/project/ningfastforge)
+[![Downloads per month](https://static.pepy.tech/badge/ningfastforge/month)](https://pepy.tech/project/ningfastforge)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+</div>
+
+---
 
 Forge is a powerful command-line tool that helps you quickly bootstrap production-ready FastAPI projects with best practices, intelligent defaults, and a beautiful interactive interface.
 
@@ -64,25 +78,48 @@ forge init my-api --no-interactive
 cd my-awesome-api
 uv sync
 uv run uvicorn app.main:app --reload
+# Visit:
+http://127.0.0.1:8000/docs # docs
+http://127.0.0.1:8000/redoc #redoc
 ```
-
-Visit:
-- 📚 Docs: http://127.0.0.1:8000/docs
-- 📖 ReDoc: http://127.0.0.1:8000/redoc
 
 ## 🏗️ Architecture
 
-Forge follows a **"Configuration-First"** design principle:
+Forge follows a **"Configuration-First"** design principle with a **dynamic generator system**:
 
 1. **Init Command** collects user preferences interactively
 2. **Configuration File** (`.forge/config.json`) is saved first
-3. **ProjectGenerator** reads the config and generates code accordingly
+3. **Dynamic Generator System** automatically discovers and executes generators based on configuration
+
+### Dynamic Generator System
+
+Forge uses a decorator-based system for automatic generator discovery and management:
+
+```python
+@Generator(
+    category="model",
+    priority=40,
+    requires=["DatabaseConnectionGenerator"],
+    enabled_when=lambda c: c.has_auth()
+)
+class UserModelGenerator:
+    def generate(self):
+        # Generate user model code
+```
+
+**Benefits:**
+- ✅ Automatic generator discovery - no manual registration needed
+- ✅ Dependency resolution - generators execute in correct order
+- ✅ Conditional execution - only enabled generators run
+- ✅ Easy extensibility - add new generators by creating files
 
 This separation ensures:
+
 - ✅ Configuration persistence and traceability
 - ✅ Clear separation of concerns
 - ✅ Easy project regeneration and updates
 - ✅ Configuration sharing and templates
+- ✅ Modular and maintainable codebase
 
 ## 🎯 Configuration Options
 
@@ -99,6 +136,7 @@ This separation ensures:
 ### Authentication & Security
 
 #### Authentication Options
+
 - **Complete JWT Auth** (Recommended) - Full-featured authentication system
   - Login & Register
   - Email Verification
@@ -110,7 +148,9 @@ This separation ensures:
   - Optional Refresh Token
 
 #### Security Features
+
 - CORS (Configurable)
+- Rate Limiting (Built-in decorator - auto-included)
 - Input Validation (Pydantic - auto-included)
 - Password Hashing (bcrypt - auto-included with auth)
 - SQL Injection Protection (ORM - auto-included)
@@ -119,9 +159,11 @@ This separation ensures:
 ### Core Features
 
 All projects include:
+
 - **Logging** - Structured logging (automatically included)
 - **API Documentation** - Swagger UI and ReDoc (automatically included)
 - **Health Check** - Basic health check endpoint (automatically included)
+- **Rate Limiting** - Decorator-based rate limiting for API protection (automatically included)
 
 ### Development Tools
 
@@ -138,12 +180,14 @@ When you enable testing, Forge generates:
 - **pytest-asyncio** - Async test support
 
 **Generated Test Files:**
+
 - `tests/conftest.py` - Pytest configuration with database fixtures
 - `tests/test_main.py` - Tests for main API endpoints (health check, docs)
 - `tests/api/test_auth.py` - Authentication endpoint tests
 - `tests/api/test_users.py` - User endpoint tests
 
 **Running Tests:**
+
 ```bash
 # Run all tests
 pytest
@@ -173,30 +217,64 @@ my-awesome-api/
 │   ├── main.py              # FastAPI application entry point
 │   ├── core/
 │   │   ├── config/          # Configuration management
-│   │   │   ├── settings.py
-│   │   │   └── modules/     # Config modules (app, database, jwt, etc.)
+│   │   │   ├── base.py      # Base configuration
+│   │   │   ├── settings.py  # Settings aggregator
+│   │   │   └── modules/     # Config modules (app, database, jwt, cors, email, logger)
 │   │   ├── database/        # Database connection
 │   │   │   ├── connection.py
+│   │   │   ├── dependencies.py
 │   │   │   └── postgresql.py / mysql.py
-│   │   └── security.py      # Security utilities
+│   │   ├── deps.py          # Global dependencies
+│   │   ├── logger.py        # Logging configuration
+│   │   └── security.py      # Security utilities (password hashing, JWT)
+│   ├── decorators/          # Custom decorators
+│   │   └── rate_limit.py    # Rate limiting decorator
 │   ├── models/              # Database models
+│   │   ├── user.py
+│   │   └── token.py         # (if refresh token enabled)
 │   ├── schemas/             # Pydantic schemas
+│   │   ├── user.py
+│   │   └── token.py
 │   ├── crud/                # CRUD operations
+│   │   ├── user.py
+│   │   └── token.py         # (if refresh token enabled)
 │   ├── services/            # Business logic
+│   │   └── auth.py
 │   ├── routers/             # API routes
 │   │   └── v1/              # API version 1
+│   │       ├── __init__.py  # Router aggregator
+│   │       ├── auth.py
+│   │       └── users.py
 │   └── utils/               # Utility functions
+│       └── email.py         # (if complete auth enabled)
 ├── tests/                   # Test files (if enabled)
 │   ├── conftest.py          # Pytest configuration and fixtures
 │   ├── test_main.py         # Main API endpoint tests
-│   └── api/
-│       ├── test_auth.py     # Authentication tests
-│       └── test_users.py    # User endpoint tests
+│   ├── api/
+│   │   ├── test_auth.py     # Authentication tests
+│   │   └── test_users.py    # User endpoint tests
+│   └── unit/                # Unit tests directory
 ├── alembic/                 # Database migrations (if enabled)
+│   ├── versions/            # Migration versions
+│   ├── env.py               # Alembic environment
+│   ├── script.py.mako       # Migration template
+│   └── README.md
+├── static/                  # Static files
+│   └── email_template/      # Email templates (if complete auth)
+│       ├── base.html
+│       ├── verification.html
+│       ├── password_reset.html
+│       └── welcome.html
+├── secret/                  # Environment files
+│   ├── .env.example         # Environment variables template
+│   ├── .env.development     # Development environment
+│   └── .env.production      # Production environment
 ├── docker-compose.yml       # Docker Compose configuration (if enabled)
 ├── Dockerfile               # Docker configuration (if enabled)
+├── .dockerignore            # Docker ignore file (if enabled)
+├── .gitignore               # Git ignore file
 ├── pyproject.toml           # Project dependencies
-├── .env.example             # Environment variables template
+├── uv.lock                  # UV lock file
 └── README.md                # Project documentation
 ```
 
@@ -276,11 +354,13 @@ Forge/
 │   ├── __init__.py       # Command exports
 │   └── init.py           # Project initialization command
 ├── core/                 # Core business logic
+│   ├── decorators/       # Decorator system
+│   │   └── generator.py  # @Generator decorator and registry
 │   ├── config_reader.py  # Configuration file reader
 │   ├── project_generator.py  # Project generator
 │   ├── generators/       # Code generators
 │   │   ├── structure.py  # Project structure generator
-│   │   ├── orchestrator.py  # Generator coordinator
+│   │   ├── orchestrator.py  # Dynamic generator coordinator
 │   │   ├── configs/      # Config file generators
 │   │   ├── deployment/   # Deployment config generators
 │   │   └── templates/    # Application code generators
@@ -293,6 +373,13 @@ Forge/
 ├── pyproject.toml        # Project configuration
 └── README.md             # This file
 ```
+
+### Key Components
+
+- **`@Generator` Decorator** - Automatic generator registration system
+- **`orchestrator.py`** - Discovers and executes generators in correct order
+- **40+ Generators** - Each responsible for specific files/features
+- **Configuration-First** - All decisions driven by `.forge/config.json`
 
 ## 🤝 Contributing
 
@@ -341,15 +428,16 @@ See [PUBLISHING.md](PUBLISHING.md) for detailed instructions.
 
 ## 📝 License
 
-MIT License
+[MIT License](LICENSE)
 
-## �  Changelog
+## 🎉 Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 ## 🙏 Acknowledgments
 
 Built with:
+
 - [FastAPI](https://fastapi.tiangolo.com/) - Modern, fast web framework
 - [Typer](https://typer.tiangolo.com/) - CLI framework
 - [Rich](https://rich.readthedocs.io/) - Beautiful terminal output

@@ -1,7 +1,15 @@
 """Email servicegenerategenerator"""
+from core.decorators import Generator
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="email",
+    priority=75,
+    requires=["ConfigEmailGenerator"],
+    enabled_when=lambda c: c.get_auth_type() == 'complete',
+    description="Generate email service (app/utils/email.py)"
+)
 class EmailServiceGenerator(BaseTemplateGenerator):
     """Email serviceFile generator"""
     

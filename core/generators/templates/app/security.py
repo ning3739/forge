@@ -1,8 +1,15 @@
 """Security management file generator"""
+from core.decorators import Generator
 from pathlib import Path
 from .base import BaseTemplateGenerator
 
 
+@Generator(
+    category="app_config",
+    priority=19,
+    enabled_when=lambda c: c.has_auth(),
+    description="Generate security utilities (app/core/security.py)"
+)
 class SecurityGenerator(BaseTemplateGenerator):
     """Security management generator"""
     

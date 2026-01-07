@@ -1,7 +1,14 @@
 """loggingConfiguration file generator - generate Pydantic configurationclass"""
+from core.decorators import Generator
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="app_config",
+    priority=12,
+    requires=["ConfigBaseGenerator"],
+    description="Generate logger configuration (app/core/config/modules/logger.py)"
+)
 class ConfigLoggerGenerator(BaseTemplateGenerator):
     """generate app/core/config/modules/logger.py file - Pydantic loggingconfigurationclass"""
     
@@ -22,27 +29,27 @@ class ConfigLoggerGenerator(BaseTemplateGenerator):
     )
     LOG_TO_FILE: bool = Field(
         default=False,
-        description="Whether to write logging to file"
+        description="Generate logger configuration (app/core/config/modules/logger.py)"
     )
     LOG_FILE_PATH: str = Field(
         default="logs/app.log",
-        description="loggingFile path"
+        description="Generate logger configuration (app/core/config/modules/logger.py)"
     )
     LOG_TO_CONSOLE: bool = Field(
         default=True,
-        description="Whether to output to console"
+        description="Generate logger configuration (app/core/config/modules/logger.py)"
     )
     LOG_CONSOLE_LEVEL: str = Field(
         default="INFO",
-        description="Console logging level"
+        description="Generate logger configuration (app/core/config/modules/logger.py)"
     )
     LOG_ROTATION: Optional[str] = Field(
         default="1 day",
-        description="Log rotation period, supports formats: '1 day', '500 MB', '10:00', etc."
+        description="Generate logger configuration (app/core/config/modules/logger.py)"
     )
     LOG_RETENTION_PERIOD: Optional[str] = Field(
         default="7 days",
-        description="Log retention period, log files older than this will be automatically deleted, supports formats: '7 days', '1 week', '1 month', etc."
+        description="Generate logger configuration (app/core/config/modules/logger.py)"
     )
 '''
         

@@ -1,7 +1,14 @@
 """dockerignore generator"""
+from core.decorators import Generator
 from ..templates.base import BaseTemplateGenerator
 
 
+@Generator(
+    category="deployment",
+    priority=102,
+    enabled_when=lambda c: c.has_docker(),
+    description="Generate .dockerignore"
+)
 class DockerignoreGenerator(BaseTemplateGenerator):
     """.dockerignore file generator"""
     

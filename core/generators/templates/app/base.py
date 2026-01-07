@@ -1,7 +1,13 @@
 """configurationbase classFile generator"""
+from core.decorators import Generator
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="app_config",
+    priority=10,
+    description="Generate app/core/config/base.py"
+)
 class ConfigBaseGenerator(BaseTemplateGenerator):
     """generate app/core/config/base.py file"""
     

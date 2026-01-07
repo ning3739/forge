@@ -1,8 +1,16 @@
 """authentication routesgenerategenerator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="router",
+    priority=80,
+    requires=["AuthServiceGenerator", "UserSchemaGenerator"],
+    enabled_when=lambda c: c.has_auth(),
+    description="Generate authentication router (app/routers/v1/auth.py)"
+)
 class AuthRouterGenerator(BaseTemplateGenerator):
     """authentication routesFile generator"""
     

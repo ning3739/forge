@@ -1,8 +1,16 @@
 """user Schema generategenerator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="schema",
+    priority=50,
+    requires=["UserModelGenerator"],
+    enabled_when=lambda c: c.has_auth(),
+    description="Generate user schemas (app/schemas/user.py)"
+)
 class UserSchemaGenerator(BaseTemplateGenerator):
     """user Schema File generator"""
     
@@ -72,8 +80,8 @@ class UserResponse(UserBase):
 
 class UserLogin(BaseModel):
     """User login Schema"""
-    username: Optional[str] = Field(None, description="Username")
-    email: Optional[EmailStr] = Field(None, description="Email")
+    username: Optional[str] = Field(None, description="Generate user schemas (app/schemas/user.py)")
+    email: Optional[EmailStr] = Field(None, description="Generate user schemas (app/schemas/user.py)")
     password: str = Field(..., min_length=6)
     
     @model_validator(mode='after')
@@ -178,8 +186,8 @@ class UserResponse(UserBase):
 
 class UserLogin(BaseModel):
     """User login Schema"""
-    username: Optional[str] = Field(None, description="Username")
-    email: Optional[EmailStr] = Field(None, description="Email")
+    username: Optional[str] = Field(None, description="Generate user schemas (app/schemas/user.py)")
+    email: Optional[EmailStr] = Field(None, description="Generate user schemas (app/schemas/user.py)")
     password: str = Field(..., min_length=6)
     
     @model_validator(mode='after')
@@ -224,7 +232,7 @@ class TokenData(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     """refreshtokenrequest Schema"""
-    refresh_token: str = Field(..., description="refreshtoken")
+    refresh_token: str = Field(..., description="Generate user schemas (app/schemas/user.py)")
 
 
 # ========== EmailValidaterelated Schema ==========

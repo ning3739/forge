@@ -1,7 +1,14 @@
 """Dockerfile generator"""
+from core.decorators import Generator
 from ..templates.base import BaseTemplateGenerator
 
 
+@Generator(
+    category="deployment",
+    priority=100,
+    enabled_when=lambda c: c.has_docker(),
+    description="Generate Dockerfile"
+)
 class DockerfileGenerator(BaseTemplateGenerator):
     """Dockerfile file generator"""
     

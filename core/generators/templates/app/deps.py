@@ -1,7 +1,15 @@
 """Core Dependencies generategenerator - generate app/core/deps.py"""
+from core.decorators import Generator
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="app_config",
+    priority=20,
+    requires=["SecurityGenerator"],
+    enabled_when=lambda c: c.has_auth(),
+    description="Generate core dependencies (app/core/deps.py)"
+)
 class CoreDepsGenerator(BaseTemplateGenerator):
     """generate app/core/deps.py - coredependenciesinjectionfunction"""
     

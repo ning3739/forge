@@ -1,7 +1,12 @@
 include README.md
 include LICENSE
 include CHANGELOG.md
+include PUBLISHING.md
+recursive-include assets *.svg *.png *.jpg
 recursive-include core *.py
 recursive-include commands *.py
 recursive-include ui *.py
 include main.py
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .DS_Store

@@ -1,8 +1,16 @@
 """Authentication service generator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="service",
+    priority=70,
+    requires=["UserCRUDGenerator", "SecurityGenerator"],
+    enabled_when=lambda c: c.has_auth(),
+    description="Generate authentication service (app/services/auth.py)"
+)
 class AuthServiceGenerator(BaseTemplateGenerator):
     """Authentication service file generator"""
     

@@ -1,8 +1,16 @@
 """PostgreSQL database managementgeneratorgenerategenerator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="database",
+    priority=31,
+    requires=["DatabaseConnectionGenerator"],
+    enabled_when=lambda c: c.get_database_type() == 'PostgreSQL',
+    description="Generate PostgreSQL database manager (app/core/database/postgresql.py)"
+)
 class DatabasePostgreSQLGenerator(BaseTemplateGenerator):
     """PostgreSQL database managementgeneratorgenerategenerator"""
     

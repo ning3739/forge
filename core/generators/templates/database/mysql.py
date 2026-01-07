@@ -1,8 +1,16 @@
 """MySQL database managementgeneratorgenerategenerator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="database",
+    priority=31,
+    requires=["DatabaseConnectionGenerator"],
+    enabled_when=lambda c: c.get_database_type() == 'MySQL',
+    description="Generate MySQL database manager (app/core/database/mysql.py)"
+)
 class DatabaseMySQLGenerator(BaseTemplateGenerator):
     """MySQL database managementgeneratorgenerategenerator"""
     

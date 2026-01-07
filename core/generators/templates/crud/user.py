@@ -1,8 +1,16 @@
 """user CRUD generategenerator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="crud",
+    priority=60,
+    requires=["UserModelGenerator", "UserSchemaGenerator"],
+    enabled_when=lambda c: c.has_auth(),
+    description="Generate user CRUD operations (app/crud/user.py)"
+)
 class UserCRUDGenerator(BaseTemplateGenerator):
     """user CRUD File generator"""
     

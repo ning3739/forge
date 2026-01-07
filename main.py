@@ -1,16 +1,10 @@
 """Forge CLI Main Entry Point"""
-import warnings
 import typer
 from typing import Optional
 
-# Disable urllib3 OpenSSL warnings
-warnings.filterwarnings('ignore', message='urllib3 v2 only supports OpenSSL 1.1.1+')
-
 from ui.logo import show_logo
 from commands.init import init_command
-
-# Version constant
-VERSION = "0.1.2"
+from core.version import __version__
 
 # Create main application
 app = typer.Typer(
@@ -27,7 +21,7 @@ app.command(name="init", help="Initialize a new FastAPI project")(init_command)
 def version_callback(value: bool) -> None:
     """Version information callback"""
     if value:
-        typer.echo(f"Forge CLI v{VERSION}")
+        typer.echo(f"Forge CLI v{__version__}")
         raise typer.Exit()
 
 

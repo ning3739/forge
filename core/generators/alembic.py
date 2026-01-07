@@ -1,9 +1,17 @@
 """Alembic migration tool generator"""
 from pathlib import Path
+from core.decorators import Generator
 from core.utils import FileOperations
 from core.config_reader import ConfigReader
 
 
+@Generator(
+    category="migration",
+    priority=120,
+    requires=["DatabaseConnectionGenerator"],
+    enabled_when=lambda c: c.has_migration(),
+    description="Generate Alembic migration configuration"
+)
 class AlembicGenerator:
     """Alembic migration tool generator"""
     

@@ -1,7 +1,15 @@
 """CORS Configuration file generator"""
+from core.decorators import Generator
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="app_config",
+    priority=14,
+    requires=["ConfigBaseGenerator"],
+    enabled_when=lambda c: c.has_cors(),
+    description="Generate CORS configuration (app/core/config/modules/cors.py)"
+)
 class ConfigCorsGenerator(BaseTemplateGenerator):
     """generate app/core/config/modules/cors.py file"""
     
@@ -25,7 +33,7 @@ class ConfigCorsGenerator(BaseTemplateGenerator):
     )
     CORS_ALLOW_CREDENTIALS: bool = Field(
         default=True,
-        description="Allow CORS credentials"
+        description="Generate CORS configuration (app/core/config/modules/cors.py)"
     )
     CORS_ALLOW_METHODS: str = Field(
         default='GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD,TRACE,CONNECT',

@@ -1,8 +1,16 @@
 """Test user endpoints generator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="test",
+    priority=113,
+    requires=["UserRouterGenerator"],
+    enabled_when=lambda c: c.has_testing() and c.has_auth(),
+    description="Generate user tests (tests/api/test_users.py)"
+)
 class TestUsersGenerator(BaseTemplateGenerator):
     """generate test_users.py file"""
     

@@ -18,6 +18,7 @@ from ui.components import (
     console
 )
 from ui.colors import get_colors
+from core.version import __version__
 from core.utils import ProjectConfig
 from core.project_generator import ProjectGenerator
 
@@ -235,7 +236,7 @@ def save_config_file(project_path: Path, config: Dict[str, Any]) -> None:
     # Add metadata
     ordered_config["metadata"] = {
         "created_at": datetime.now().isoformat(),
-        "forge_version": "0.1.0"
+        "forge_version": __version__
     }
     
     # Save configuration file

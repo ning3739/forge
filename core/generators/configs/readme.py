@@ -1,7 +1,13 @@
 """README.md generategenerator"""
+from core.decorators import Generator
 from ..templates.base import BaseTemplateGenerator
 
 
+@Generator(
+    category="config",
+    priority=2,
+    description="Generate README.md with project documentation"
+)
 class ReadmeGenerator(BaseTemplateGenerator):
     """README.md File generator"""
     
@@ -99,29 +105,64 @@ uvicorn app.main:app --reload
 ```
 .
 ├── app/
-│   ├── core/           # Core configurations
-│   ├── router/         # API routes
-│   ├── schemas/        # Pydantic schemas
-│   ├── utils/          # Utility functions
-│   ├── models/         # Database models
-│   ├── crud/           # CRUD operations
+│   ├── __init__.py
+│   ├── main.py             # Application entry point
+│   ├── core/               # Core configurations
+│   │   ├── config/         # Configuration modules
+│   │   │   ├── base.py
+│   │   │   ├── settings.py
+│   │   │   └── modules/    # Config modules (app, database, jwt, etc.)
+│   │   ├── database/       # Database connection
+│   │   ├── deps.py         # Dependencies
+│   │   ├── logger.py       # Logging configuration
+│   │   └── security.py     # Security utilities
+│   ├── decorators/         # Custom decorators
+│   │   └── rate_limit.py   # Rate limiting decorator
+│   ├── models/             # Database models
+│   ├── schemas/            # Pydantic schemas
+│   ├── crud/               # CRUD operations
 '''
         
         if self.config_reader.has_auth():
-            content += '''│   ├── services/       # Business logic
+            content += '''│   ├── services/           # Business logic
 '''
         
-        content += '''│   └── __init__.py
-├── main.py             # Application entry point
+        content += '''│   ├── routers/            # API routes
+│   │   └── v1/             # API version 1
+│   └── utils/              # Utility functions
+'''
+        
+        if self.config_reader.has_migration():
+            content += '''├── alembic/                # Database migrations
+│   ├── versions/           # Migration versions
+│   └── env.py              # Alembic configuration
+'''
+        
+        content += '''├── static/                 # Static files (images, CSS, JS, etc.)
 '''
         
         if self.config_reader.has_testing():
-            content += '''├── tests/              # Test files
+            content += '''├── tests/                  # Test files
+│   ├── conftest.py         # Pytest configuration
+│   ├── test_main.py        # Main API tests
+│   └── api/                # API endpoint tests
 '''
         
-        content += '''├── .env.example        # Environment variables example
-├── pyproject.toml      # Project dependencies
-└── README.md           # This file
+        if self.config_reader.has_docker():
+            content += '''├── Dockerfile              # Docker configuration
+├── docker-compose.yml      # Docker Compose configuration
+├── .dockerignore           # Docker ignore file
+'''
+        
+        content += '''├── script/                 # Custom scripts (shell script,  etc.)
+├── secret/                 # Environment files
+│   ├── .env.example        # Environment variables template
+│   ├── .env.development    # Development environment
+│   └── .env.production     # Production environment
+├── static/                 # Static files (images, CSS, JS, etc.)
+├── pyproject.toml          # Project dependencies
+├── .gitignore              # Git ignore file
+└── README.md               # This file
 ```
 
 '''
@@ -147,7 +188,7 @@ cp .env.example .env
         """Builddatabaseconfigurationdescription"""
         content = '''### Database Configuration
 
-Update the database connection string in `.env`:
+Update the database connection string in `.env.development` and `.env.production`:
 
 ```
 DATABASE_URL=postgresql://user:password@localhost:5432/dbname
@@ -178,6 +219,46 @@ Once the application is running, visit:
 
 - Swagger UI: http://127.0.0.1:8000/docs
 - ReDoc: http://127.0.0.1:8000/redoc
+
+## Features
+
+### Rate Limiting
+
+The project includes a built-in rate limiting decorator to protect your API endpoints:
+
+```python
+from app.decorators.rate_limit import rate_limit, rate_limit_strict
+
+# Custom rate limit
+@router.get("/api/data")
+@rate_limit(max_requests=100, window_seconds=60)
+async def get_data(request: Request):
+    return {"data": "value"}
+
+# Predefined strict limit (10 requests/minute)
+@router.post("/api/action")
+@rate_limit_strict
+async def perform_action(request: Request):
+    return {"status": "success"}
+```
+
+**Available decorators:**
+- `@rate_limit_strict` - 10 requests per minute
+- `@rate_limit_moderate` - 100 requests per minute
+- `@rate_limit_relaxed` - 1000 requests per hour
+
+**Custom identifier (e.g., user-based):**
+```python
+@rate_limit(
+    max_requests=50,
+    window_seconds=3600,
+    identifier_func=lambda req: req.state.user.id
+)
+async def user_endpoint(request: Request):
+    return {"data": "user-specific"}
+```
+
+**Note:** The default implementation uses in-memory storage. For production with multiple instances, consider using Redis-based rate limiting.
 
 '''
     
@@ -246,5 +327,5 @@ docker run -p 8000:8000 {project_name}
         """Build license section"""
         return '''## License
 
-MIT
+This project was created by [Forge](https://github.com/ning3739/forge) and is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 '''

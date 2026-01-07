@@ -1,77 +1,17 @@
-"""Generator coordinator module
-
-Responsible for coordinating all code generators and generating project files according to configuration
-"""
+"""Generator orchestrator - automatically discovers and manages generators"""
 from pathlib import Path
-from core.config_reader import ConfigReader
+from typing import List
 
-# Configuration file generators
-from .configs.pyproject import PyprojectGenerator
-from .configs.readme import ReadmeGenerator
-from .configs.gitignore import GitignoreGenerator
-from .configs.env import EnvGenerator
-
-# Deployment configuration generators
-from .deployment.dockerfile import DockerfileGenerator
-from .deployment.docker_compose import DockerComposeGenerator
-from .deployment.dockerignore import DockerignoreGenerator
-
-# Test generators
-from .templates.tests.conftest import ConftestGenerator
-from .templates.tests.test_main import TestMainGenerator
-from .templates.tests.test_auth import TestAuthGenerator
-from .templates.tests.test_users import TestUsersGenerator
-
-# Application code generators
-from .templates.app.security import SecurityGenerator
-from .templates.app.main import MainGenerator
-from .templates.app.base import ConfigBaseGenerator
-from .templates.app.app import ConfigAppGenerator
-from .templates.app.logger_config import ConfigLoggerGenerator  # Pydantic logging configuration
-from .templates.app.logger_manager import LoggerManagerGenerator  # Logger manager
-from .templates.app.cors import ConfigCorsGenerator
-from .templates.app.database import ConfigDatabaseGenerator
-from .templates.app.jwt import ConfigJwtGenerator
-from .templates.app.email import ConfigEmailGenerator
-from .templates.app.settings import ConfigSettingsGenerator
-from .templates.app.deps import CoreDepsGenerator  # Core dependency injection
-
-# Email service generators
-from .templates.email.email import EmailServiceGenerator
-from .templates.email.email_template import EmailTemplateGenerator
-
-# Database generators
-from .templates.database.connection import DatabaseConnectionGenerator
-from .templates.database.mysql import DatabaseMySQLGenerator
-from .templates.database.postgresql import DatabasePostgreSQLGenerator
-from .templates.database.dependencies import DatabaseDependenciesGenerator
-
-# Model generators
-from .templates.models.user import UserModelGenerator
-from .templates.models.token import TokenModelGenerator
-
-# Schema generators
-from .templates.schemas.user import UserSchemaGenerator
-from .templates.schemas.token import TokenSchemaGenerator
-
-# CRUD generators
-from .templates.crud.user import UserCRUDGenerator
-from .templates.crud.token import TokenCRUDGenerator
-
-# Service generators
-from .templates.services.auth import AuthServiceGenerator
-
-# Router generators
-from .templates.routers.auth import AuthRouterGenerator
-from .templates.routers.user import UserRouterGenerator
-from .templates.routers.api_v1 import ApiV1Generator
+from ..config_reader import ConfigReader
+from ..decorators import GENERATORS, GeneratorDefinition
 
 
 class GeneratorOrchestrator:
-    """Generator coordinator - coordinates all file generators"""
+    """Generator orchestrator - automatically discovers and manages generators using decorators"""
     
     def __init__(self, project_path: Path, config_reader: ConfigReader):
-        """Initialize generator coordinator
+        """
+        Initialize orchestrator
         
         Args:
             project_path: Project root directory path
@@ -79,137 +19,214 @@ class GeneratorOrchestrator:
         """
         self.project_path = Path(project_path)
         self.config_reader = config_reader
-        self.generators = self._initialize_generators()
+        self.generators = []
+        self._initialize_generators()
     
-    def _initialize_generators(self) -> list:
-        """Initialize all generators (in dependency order)"""
-        generators = []
+    def _initialize_generators(self) -> None:
+        """Initialize generators - auto-discover, filter, and sort"""
+        # 1. Import all generator modules (triggers decorator registration)
+        self._import_all_generators()
         
-        # 1. Base configuration files (always generated)
-        generators.extend(self._get_base_config_generators())
+        # 2. Filter enabled generators
+        enabled_generators = self._filter_enabled_generators()
         
-        # 2. Database system (always generated)
-        generators.extend(self._get_database_generators())
+        # 3. Check conflicts
+        self._check_conflicts(enabled_generators)
         
-        # 3. Authentication system (always generated)
-        generators.extend(self._get_auth_generators())
+        # 4. Resolve dependencies and sort
+        sorted_generators = self._resolve_dependencies(enabled_generators)
         
-        # 4. Application entry point (always generated)
-        generators.append(MainGenerator(self.project_path, self.config_reader))
+        # 5. Instantiate generators
+        self.generators = self._instantiate_generators(sorted_generators)
         
-        # 5. Deployment configuration (if enabled)
-        if self.config_reader.has_docker():
-            generators.extend(self._get_docker_generators())
-        
-        # 6. Test code (if enabled)
-        if self.config_reader.has_testing():
-            generators.extend(self._get_test_generators())
-        
-        return generators
+        # 6. Log generators (for debugging)
+        self._log_generators()
     
-    def _get_base_config_generators(self) -> list:
-        """Get base configuration file generators"""
-        return [
-            # Project configuration files
-            PyprojectGenerator(self.project_path, self.config_reader),
-            ReadmeGenerator(self.project_path, self.config_reader),
-            GitignoreGenerator(self.project_path, self.config_reader),
-            EnvGenerator(self.project_path, self.config_reader),
+    def _import_all_generators(self) -> None:
+        """Import all generator modules to trigger decorator registration"""
+        # Config file generators
+        from core.generators.configs.pyproject import PyprojectGenerator
+        from core.generators.configs.readme import ReadmeGenerator
+        from core.generators.configs.gitignore import GitignoreGenerator
+        from core.generators.configs.env import EnvGenerator
+        from core.generators.configs.license import LicenseGenerator
+        
+        # Deployment config generators
+        from core.generators.deployment.dockerfile import DockerfileGenerator
+        from core.generators.deployment.docker_compose import DockerComposeGenerator
+        from core.generators.deployment.dockerignore import DockerignoreGenerator
+        
+        # Application code generators
+        from core.generators.templates.app.security import SecurityGenerator
+        from core.generators.templates.app.main import MainGenerator
+        from core.generators.templates.app.base import ConfigBaseGenerator
+        from core.generators.templates.app.app import ConfigAppGenerator
+        from core.generators.templates.app.logger_config import ConfigLoggerGenerator
+        from core.generators.templates.app.logger_manager import LoggerManagerGenerator
+        from core.generators.templates.app.cors import ConfigCorsGenerator
+        from core.generators.templates.app.database import ConfigDatabaseGenerator
+        from core.generators.templates.app.jwt import ConfigJwtGenerator
+        from core.generators.templates.app.email import ConfigEmailGenerator
+        from core.generators.templates.app.settings import ConfigSettingsGenerator
+        from core.generators.templates.app.deps import CoreDepsGenerator
+        
+        # Database generators
+        from core.generators.templates.database.connection import DatabaseConnectionGenerator
+        from core.generators.templates.database.mysql import DatabaseMySQLGenerator
+        from core.generators.templates.database.postgresql import DatabasePostgreSQLGenerator
+        from core.generators.templates.database.dependencies import DatabaseDependenciesGenerator
+        
+        # Model generators
+        from core.generators.templates.models.user import UserModelGenerator
+        from core.generators.templates.models.token import TokenModelGenerator
+        
+        # Schema generators
+        from core.generators.templates.schemas.user import UserSchemaGenerator
+        from core.generators.templates.schemas.token import TokenSchemaGenerator
+        
+        # CRUD generators
+        from core.generators.templates.crud.user import UserCRUDGenerator
+        from core.generators.templates.crud.token import TokenCRUDGenerator
+        
+        # Service generators
+        from core.generators.templates.services.auth import AuthServiceGenerator
+        
+        # Router generators
+        from core.generators.templates.routers.auth import AuthRouterGenerator
+        from core.generators.templates.routers.user import UserRouterGenerator
+        from core.generators.templates.routers.router_aggregator import RouterAggregatorGenerator
+        
+        # Decorator generators
+        from core.generators.templates.decorators.rate_limit import RateLimitDecoratorGenerator
+        
+        # Email generators
+        from core.generators.templates.email.email import EmailServiceGenerator
+        from core.generators.templates.email.email_template import EmailTemplateGenerator
+        
+        # Test generators
+        from core.generators.templates.tests.conftest import ConftestGenerator
+        from core.generators.templates.tests.test_main import TestMainGenerator
+        from core.generators.templates.tests.test_auth import TestAuthGenerator
+        from core.generators.templates.tests.test_users import TestUsersGenerator
+        
+        # Alembic generator
+        from core.generators.alembic import AlembicGenerator
+    
+    def _filter_enabled_generators(self) -> List[GeneratorDefinition]:
+        """Filter enabled generators"""
+        enabled = []
+        
+        for name, gen_def in GENERATORS.items():
+            if self._is_enabled(gen_def):
+                enabled.append(gen_def)
+        
+        return enabled
+    
+    def _is_enabled(self, gen_def: GeneratorDefinition) -> bool:
+        """Check if generator should be enabled"""
+        if gen_def.enabled_when is None:
+            return True
+        
+        try:
+            return gen_def.enabled_when(self.config_reader)
+        except Exception as e:
+            print(f"Warning: Error checking if {gen_def.name} is enabled: {e}")
+            return False
+    
+    def _check_conflicts(self, generators: List[GeneratorDefinition]) -> None:
+        """Check for generator conflicts"""
+        enabled_names = {gen.name for gen in generators}
+        
+        for gen_def in generators:
+            for conflict in gen_def.conflicts:
+                if conflict in enabled_names:
+                    raise ValueError(
+                        f"Generator conflict: {gen_def.name} conflicts with {conflict}"
+                    )
+    
+    def _resolve_dependencies(
+        self,
+        generators: List[GeneratorDefinition]
+    ) -> List[GeneratorDefinition]:
+        """
+        Resolve dependencies and sort (topological sort)
+        
+        Returns:
+            Sorted list of generators
+        """
+        # Create name to definition mapping
+        gen_map = {gen.name: gen for gen in generators}
+        
+        # Topological sort
+        sorted_gens = []
+        visited = set()
+        visiting = set()
+        
+        def visit(gen_def: GeneratorDefinition):
+            if gen_def.name in visited:
+                return
             
-            # Application configuration modules
-            ConfigBaseGenerator(self.project_path, self.config_reader),
-            ConfigAppGenerator(self.project_path, self.config_reader),
-            ConfigLoggerGenerator(self.project_path, self.config_reader),
-            LoggerManagerGenerator(self.project_path, self.config_reader),
-            ConfigCorsGenerator(self.project_path, self.config_reader),
-            ConfigDatabaseGenerator(self.project_path, self.config_reader),
-            ConfigJwtGenerator(self.project_path, self.config_reader),
-            ConfigEmailGenerator(self.project_path, self.config_reader),
-            ConfigSettingsGenerator(self.project_path, self.config_reader),
-        ]
-    
-    def _get_database_generators(self) -> list:
-        """Get database-related generators"""
-        generators = [DatabaseConnectionGenerator(self.project_path, self.config_reader)]
-        
-        # Add corresponding manager based on database type
-        db_type = self.config_reader.get_database_type()
-        if db_type == "MySQL":
-            generators.append(DatabaseMySQLGenerator(self.project_path, self.config_reader))
-        elif db_type == "PostgreSQL":
-            generators.append(DatabasePostgreSQLGenerator(self.project_path, self.config_reader))
-        
-        # Add database dependency injection (required for authentication)
-        generators.append(DatabaseDependenciesGenerator(self.project_path, self.config_reader))
-        
-        return generators
-    
-    def _get_auth_generators(self) -> list:
-        """Get authentication system generators"""
-        auth_type = self.config_reader.get_auth_type()
-        
-        generators = [
-            # Core security module
-            SecurityGenerator(self.project_path, self.config_reader),
-            CoreDepsGenerator(self.project_path, self.config_reader),
+            if gen_def.name in visiting:
+                raise ValueError(f"Circular dependency detected: {gen_def.name}")
             
-            # User model, schema and CRUD
-            UserModelGenerator(self.project_path, self.config_reader),
-            UserSchemaGenerator(self.project_path, self.config_reader),
-            UserCRUDGenerator(self.project_path, self.config_reader),
-        ]
+            visiting.add(gen_def.name)
+            
+            # Visit dependencies first
+            for req_name in gen_def.requires:
+                req_gen = gen_map.get(req_name)
+                if req_gen:
+                    visit(req_gen)
+                else:
+                    print(f"Warning: {gen_def.name} requires {req_name}, but it's not enabled")
+            
+            visiting.remove(gen_def.name)
+            visited.add(gen_def.name)
+            sorted_gens.append(gen_def)
         
-        # Complete JWT Auth requires Token-related files
-        if auth_type == "complete":
-            generators.extend([
-                TokenModelGenerator(self.project_path, self.config_reader),
-                TokenSchemaGenerator(self.project_path, self.config_reader),
-                TokenCRUDGenerator(self.project_path, self.config_reader),
-            ])
+        # Visit in priority order
+        for gen_def in sorted(generators, key=lambda g: g.priority):
+            visit(gen_def)
         
-        # Authentication service and routes
-        generators.extend([
-            AuthServiceGenerator(self.project_path, self.config_reader),
-            AuthRouterGenerator(self.project_path, self.config_reader),
-            UserRouterGenerator(self.project_path, self.config_reader),
-            ApiV1Generator(self.project_path, self.config_reader),
-        ])
-        
-        # Complete JWT Auth requires email service
-        if auth_type == "complete":
-            generators.extend([
-                EmailServiceGenerator(self.project_path, self.config_reader),
-                EmailTemplateGenerator(self.project_path, self.config_reader),
-            ])
-        
-        return generators
+        return sorted_gens
     
-    def _get_docker_generators(self) -> list:
-        """Get Docker deployment config generators"""
-        return [
-            DockerfileGenerator(self.project_path, self.config_reader),
-            DockerComposeGenerator(self.project_path, self.config_reader),
-            DockerignoreGenerator(self.project_path, self.config_reader),
-        ]
+    def _instantiate_generators(
+        self,
+        gen_defs: List[GeneratorDefinition]
+    ) -> List:
+        """Instantiate generators"""
+        instances = []
+        
+        for gen_def in gen_defs:
+            try:
+                instance = gen_def.generator_class(
+                    self.project_path,
+                    self.config_reader
+                )
+                instances.append(instance)
+            except Exception as e:
+                print(f"Error: Failed to instantiate {gen_def.name}: {e}")
+                raise
+        
+        return instances
     
-    def _get_test_generators(self) -> list:
-        """Get test code generators"""
-        generators = [
-            ConftestGenerator(self.project_path, self.config_reader),
-            TestMainGenerator(self.project_path, self.config_reader),
-        ]
-        
-        # Add auth tests if authentication is enabled
-        if self.config_reader.has_auth():
-            generators.extend([
-                TestAuthGenerator(self.project_path, self.config_reader),
-                TestUsersGenerator(self.project_path, self.config_reader),
-            ])
-        
-        return generators
+    def _log_generators(self) -> None:
+        """Log generator information (for debugging)"""
+        # print(f"Debug: Total generators registered: {len(GENERATORS)}")
+        # print(f"Debug: Enabled generators: {len(self.generators)}")
+        # for i, gen in enumerate(self.generators, 1):
+        #     print(f"  {i}. {gen.__class__.__name__}")
+        pass
     
     def generate(self) -> None:
-        """generate all project files"""
+        """Generate all project files"""
+        # print(f"Info: Starting generation with {len(self.generators)} generators")
+        
         for generator in self.generators:
-            generator.generate()
-
+            try:
+                # print(f"Debug: Running {generator.__class__.__name__}")
+                generator.generate()
+            except Exception as e:
+                print(f"Error in {generator.__class__.__name__}: {e}")
+                raise
+        
+        # print("Info: Generation completed successfully")

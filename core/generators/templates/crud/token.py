@@ -1,8 +1,16 @@
 """Token CRUD generategenerator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="crud",
+    priority=61,
+    requires=["TokenModelGenerator", "TokenSchemaGenerator"],
+    enabled_when=lambda c: c.get_auth_type() == 'complete',
+    description="Generate token CRUD operations (app/crud/token.py)"
+)
 class TokenCRUDGenerator(BaseTemplateGenerator):
     """Token CRUD File generator"""
     

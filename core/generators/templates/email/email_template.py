@@ -1,8 +1,16 @@
 """Email templategenerategenerator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="email",
+    priority=76,
+    requires=["EmailServiceGenerator"],
+    enabled_when=lambda c: c.get_auth_type() == 'complete',
+    description="Generate email templates (app/utils/email_template.py)"
+)
 class EmailTemplateGenerator(BaseTemplateGenerator):
     """Email templateFile generator"""
     

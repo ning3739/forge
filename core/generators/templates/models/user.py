@@ -1,8 +1,16 @@
 """usermodelgenerategenerator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="model",
+    priority=40,
+    requires=["DatabaseConnectionGenerator"],
+    enabled_when=lambda c: c.has_auth(),
+    description="Generate user model (app/models/user.py)"
+)
 class UserModelGenerator(BaseTemplateGenerator):
     """usermodelFile generator"""
     
@@ -76,7 +84,7 @@ class UserModelGenerator(BaseTemplateGenerator):
     # Statusfield
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
-    is_verified: bool = Field(default=False, description="EmailwhetheralreadyValidate")
+    is_verified: bool = Field(default=False, description="Generate user model (app/models/user.py)")
     
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow)

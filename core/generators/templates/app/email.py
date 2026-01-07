@@ -1,9 +1,17 @@
 """Email configurationgenerategenerator"""
 from pathlib import Path
+from core.decorators import Generator
 from core.utils import FileOperations
 from core.config_reader import ConfigReader
 
 
+@Generator(
+    category="app_config",
+    priority=17,
+    requires=["ConfigBaseGenerator"],
+    enabled_when=lambda c: c.get_auth_type() == 'complete',
+    description="Generate Email configuration"
+)
 class ConfigEmailGenerator:
     """Email Configuration file generator"""
     

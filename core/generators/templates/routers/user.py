@@ -1,8 +1,16 @@
 """user routesgenerategenerator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="router",
+    priority=81,
+    requires=["UserCRUDGenerator", "CoreDepsGenerator"],
+    enabled_when=lambda c: c.has_auth(),
+    description="Generate user router (app/routers/v1/users.py)"
+)
 class UserRouterGenerator(BaseTemplateGenerator):
     """user routesFile generator"""
     

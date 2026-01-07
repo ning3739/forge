@@ -1,8 +1,16 @@
 """Pytest configuration generator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="test",
+    priority=110,
+    requires=["DatabaseConnectionGenerator"],
+    enabled_when=lambda c: c.has_testing(),
+    description="Generate pytest configuration (tests/conftest.py)"
+)
 class ConftestGenerator(BaseTemplateGenerator):
     """generate pytest conftest.py file"""
     

@@ -1,7 +1,14 @@
 """Settings Configuration file generator"""
+from core.decorators import Generator
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="app_config",
+    priority=18,
+    requires=["ConfigBaseGenerator"],
+    description="Generate settings aggregator (app/core/config/settings.py)"
+)
 class ConfigSettingsGenerator(BaseTemplateGenerator):
     """generate app/core/config/settings.py file"""
     

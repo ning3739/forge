@@ -1,7 +1,14 @@
 """Logger Manager generategenerator"""
+from core.decorators import Generator
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="app_config",
+    priority=13,
+    requires=["ConfigLoggerGenerator"],
+    description="Generate logger manager (app/core/logger.py)"
+)
 class LoggerManagerGenerator(BaseTemplateGenerator):
     """generate app/core/logger.py file - Logger managementgenerator"""
     

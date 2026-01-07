@@ -1,8 +1,16 @@
 """Token Schema generategenerator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="schema",
+    priority=51,
+    requires=["TokenModelGenerator"],
+    enabled_when=lambda c: c.get_auth_type() == 'complete',
+    description="Generate token schemas (app/schemas/token.py)"
+)
 class TokenSchemaGenerator(BaseTemplateGenerator):
     """Token Schema File generator"""
     
@@ -53,7 +61,7 @@ class RefreshTokenResponse(RefreshTokenBase):
 
 class RefreshTokenRequest(BaseModel):
     """refreshtokenrequest Schema"""
-    refresh_token: str = Field(..., description="refreshtoken")
+    refresh_token: str = Field(..., description="Generate token schemas (app/schemas/token.py)")
     
     model_config = ConfigDict(
         json_schema_extra={
@@ -66,14 +74,14 @@ class RefreshTokenRequest(BaseModel):
 
 class RefreshTokenRevoke(BaseModel):
     """Revoke refresh token Schema"""
-    token: Optional[str] = Field(None, description="Revoke token, if not provided revoke all")
+    token: Optional[str] = Field(None, description="Generate token schemas (app/schemas/token.py)")
 
 
 # ========== Verification Code Schemas ==========
 
 class VerificationCodeBase(BaseModel):
     """Verification code base Schema"""
-    code_type: str = Field(..., description="Verification code type: email_verification or password_reset")
+    code_type: str = Field(..., description="Generate token schemas (app/schemas/token.py)")
 
 
 class VerificationCodeCreate(VerificationCodeBase):
@@ -100,7 +108,7 @@ class VerificationCodeResponse(VerificationCodeBase):
 class VerificationCodeVerify(BaseModel):
     """Verification code verify Schema"""
     code: str = Field(..., min_length=4, max_length=10)
-    code_type: str = Field(..., description="Verification code type")
+    code_type: str = Field(..., description="Generate token schemas (app/schemas/token.py)")
     
     model_config = ConfigDict(
         json_schema_extra={

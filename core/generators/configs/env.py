@@ -1,7 +1,13 @@
 """Environment variable file generator"""
+from core.decorators import Generator
 from ..templates.base import BaseTemplateGenerator
 
 
+@Generator(
+    category="config",
+    priority=4,
+    description="Generate .env.example file"
+)
 class EnvGenerator(BaseTemplateGenerator):
     """Environment variable file generator"""
     
@@ -321,7 +327,7 @@ EMAIL_FROM_EMAIL=noreply@yourdomain.com
 # Logging Configuration
 # ============================================
 LOG_LEVEL=INFO
-LOG_TO_FILE=false
+LOG_TO_FILE=true
 LOG_FILE_PATH=logs/app.log
 LOG_TO_CONSOLE=true
 LOG_CONSOLE_LEVEL=INFO
@@ -331,14 +337,14 @@ LOG_RETENTION_PERIOD=7 days
 '''
         
         log_level = "DEBUG" if env == "development" else "INFO"
-        log_to_file = "true" if env == "production" else "false"
+        log_file_path = f"logs/app_{env}.log"
         
         return f'''# ============================================
 # Logging Configuration
 # ============================================
 LOG_LEVEL={log_level}
-LOG_TO_FILE={log_to_file}
-LOG_FILE_PATH=logs/app.log
+LOG_TO_FILE=true
+LOG_FILE_PATH={log_file_path}
 LOG_TO_CONSOLE=true
 LOG_CONSOLE_LEVEL={log_level}
 LOG_ROTATION=1 day

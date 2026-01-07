@@ -1,8 +1,16 @@
 """Test main API endpoints generator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="test",
+    priority=111,
+    requires=["MainGenerator"],
+    enabled_when=lambda c: c.has_testing(),
+    description="Generate main API tests (tests/test_main.py)"
+)
 class TestMainGenerator(BaseTemplateGenerator):
     """generate test_main.py file"""
     

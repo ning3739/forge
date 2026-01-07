@@ -1,8 +1,15 @@
 """database dependency injectionFile generator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="database",
+    priority=32,
+    requires=["DatabaseConnectionGenerator"],
+    description="Generate database dependencies (app/core/database/__init__.py)"
+)
 class DatabaseDependenciesGenerator(BaseTemplateGenerator):
     """database dependency injectiongenerategenerator"""
     

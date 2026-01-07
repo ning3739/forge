@@ -1,7 +1,13 @@
 """gitignore generategenerator"""
+from core.decorators import Generator
 from ..templates.base import BaseTemplateGenerator
 
 
+@Generator(
+    category="config",
+    priority=3,
+    description="Generate .gitignore file"
+)
 class GitignoreGenerator(BaseTemplateGenerator):
     """gitignore File generator"""
     

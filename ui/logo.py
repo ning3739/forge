@@ -5,10 +5,10 @@ from rich.align import Align
 from typing import List
 
 from ui.colors import get_colors, get_gradients, console
+from core.version import __version__
 
 # Constants
-VERSION = "v0.1.0"
-AUTHOR = "@ningli"
+AUTHOR = "@ning3739"
 NARROW_THRESHOLD = 60
 
 # ASCII Logo
@@ -59,7 +59,7 @@ def create_version_badge() -> Text:
     badge.append(indent)
 
     # Handle version number
-    version_str = VERSION.lstrip("v")
+    version_str = __version__.lstrip("v")
     badge.append("v", style=f"dim {colors.text_secondary}")
     badge.append(version_str, style=f"bold {colors.text_primary}")
 

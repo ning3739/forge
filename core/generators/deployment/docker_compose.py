@@ -1,7 +1,15 @@
 """Docker Compose generator"""
+from core.decorators import Generator
 from ..templates.base import BaseTemplateGenerator
 
 
+@Generator(
+    category="deployment",
+    priority=101,
+    requires=["DockerfileGenerator"],
+    enabled_when=lambda c: c.has_docker(),
+    description="Generate docker-compose.yml"
+)
 class DockerComposeGenerator(BaseTemplateGenerator):
     """Docker Compose file generator"""
     

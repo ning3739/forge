@@ -1,8 +1,16 @@
 """Token model generator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="model",
+    priority=41,
+    requires=["UserModelGenerator"],
+    enabled_when=lambda c: c.get_auth_type() == 'complete',
+    description="Generate token model (app/models/token.py)"
+)
 class TokenModelGenerator(BaseTemplateGenerator):
     """Token model file generator"""
     

@@ -1,8 +1,15 @@
 """Main.py generategenerator"""
+from core.decorators import Generator
 from pathlib import Path
 from .base import BaseTemplateGenerator
 
 
+@Generator(
+    category="app",
+    priority=90,
+    requires=["ConfigSettingsGenerator", "LoggerManagerGenerator", "DatabaseConnectionGenerator"],
+    description="Generate main application entry point (app/main.py)"
+)
 class MainGenerator(BaseTemplateGenerator):
     """Main.py File generator"""
     

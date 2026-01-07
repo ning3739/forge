@@ -1,7 +1,15 @@
 """JWT Configuration file generator"""
+from core.decorators import Generator
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="app_config",
+    priority=16,
+    requires=["ConfigBaseGenerator"],
+    enabled_when=lambda c: c.has_auth(),
+    description="Generate JWT configuration (app/core/config/modules/jwt.py)"
+)
 class ConfigJwtGenerator(BaseTemplateGenerator):
     """generate app/core/config/modules/jwt.py file"""
     
@@ -27,15 +35,15 @@ class ConfigJwtGenerator(BaseTemplateGenerator):
         base_fields = f'''    JWT_SECRET_KEY: SecretStr = Field(
         ...,
         repr=False,
-        description="Secret key used to sign JWTs"
+        description="Generate JWT configuration (app/core/config/modules/jwt.py)"
     )
     JWT_ALGORITHM: str = Field(
         default="HS256",
-        description="Algorithm used for JWT"
+        description="Generate JWT configuration (app/core/config/modules/jwt.py)"
     )
     JWT_ACCESS_TOKEN_EXPIRATION: PositiveInt = Field(
         default=1800,
-        description="JWT access token expiration time (seconds)"
+        description="Generate JWT configuration (app/core/config/modules/jwt.py)"
     )'''
         
         # Only Complete JWT Auth includes Refresh Token
@@ -43,18 +51,18 @@ class ConfigJwtGenerator(BaseTemplateGenerator):
             base_fields += f'''
     JWT_REFRESH_TOKEN_EXPIRATION: PositiveInt = Field(
         default=86400,
-        description="JWT refresh token expiration time (seconds)"
+        description="Generate JWT configuration (app/core/config/modules/jwt.py)"
     )'''
         
         # add issuer and audience
         base_fields += f'''
     JWT_ISSUER: Optional[str] = Field(
         default="{project_identifier}",
-        description="JWT issuer"
+        description="Generate JWT configuration (app/core/config/modules/jwt.py)"
     )
     JWT_AUDIENCE: Optional[str] = Field(
         default="{project_identifier}_users",
-        description="JWT audience"
+        description="Generate JWT configuration (app/core/config/modules/jwt.py)"
     )'''
         
         content = f'''class JWTSettings(EnvBaseSettings):

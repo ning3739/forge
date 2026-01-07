@@ -1,7 +1,14 @@
 """databaseConfiguration file generator"""
+from core.decorators import Generator
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="app_config",
+    priority=15,
+    requires=["ConfigBaseGenerator"],
+    description="Generate database configuration (app/core/config/modules/database.py)"
+)
 class ConfigDatabaseGenerator(BaseTemplateGenerator):
     """generate app/core/config/modules/database.py file"""
     
@@ -39,15 +46,15 @@ class ConfigDatabaseGenerator(BaseTemplateGenerator):
     # connectionpoolconfiguration
     ECHO: bool = Field(
         default=False,
-        description="Database connection pool echo"
+        description="Generate database configuration (app/core/config/modules/database.py)"
     )
     POOL_PRE_PING: bool = Field(
         default=True,
-        description="Database connection pool pre-ping"
+        description="Generate database configuration (app/core/config/modules/database.py)"
     )
     POOL_TIMEOUT: PositiveInt = Field(
         default=30,
-        description="Database connection pool timeout (seconds)"
+        description="Generate database configuration (app/core/config/modules/database.py)"
     )
     POOL_SIZE: PositiveInt = Field(
         default=6,

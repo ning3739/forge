@@ -1,7 +1,13 @@
 """pyproject.toml generategenerator"""
+from core.decorators import Generator
 from ..templates.base import BaseTemplateGenerator
 
 
+@Generator(
+    category="config",
+    priority=1,
+    description="Generate pyproject.toml with dependencies"
+)
 class PyprojectGenerator(BaseTemplateGenerator):
     """pyproject.toml File generator"""
     

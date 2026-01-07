@@ -1,8 +1,16 @@
 """Test authentication endpoints generator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="test",
+    priority=112,
+    requires=["AuthRouterGenerator"],
+    enabled_when=lambda c: c.has_testing() and c.has_auth(),
+    description="Generate authentication tests (tests/api/test_auth.py)"
+)
 class TestAuthGenerator(BaseTemplateGenerator):
     """generate test_auth.py file"""
     

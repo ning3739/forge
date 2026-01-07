@@ -1,8 +1,15 @@
 """database connectionFile generator"""
+from core.decorators import Generator
 from pathlib import Path
 from ..base import BaseTemplateGenerator
 
 
+@Generator(
+    category="database",
+    priority=30,
+    requires=["ConfigDatabaseGenerator"],
+    description="Generate database connection manager (app/core/database/connection.py)"
+)
 class DatabaseConnectionGenerator(BaseTemplateGenerator):
     """database connection managementgeneratorgenerategenerator"""
     
