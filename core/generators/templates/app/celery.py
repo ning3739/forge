@@ -141,7 +141,7 @@ celery_app.autodiscover_tasks(
 # Configure Celery Beat schedule for periodic tasks
 celery_app.conf.beat_schedule = {{
     'backup-database-daily': {{
-        'task': 'backup_database_task',
+        'task': 'app.tasks.backup_database_task.backup_database_task',
         'schedule': crontab(hour=3, minute=0),  # Execute daily at 3:00 AM
         'args': (),
         'kwargs': {{

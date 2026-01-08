@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2026-01-08
+
+### Fixed
+
+- **Celery Beat Schedule Issue**: Fixed critical issue where Celery Beat was creating malformed database filenames due to environment variable conflicts
+- **Task Configuration**: Removed `CELERY_BEAT_SCHEDULE` from environment variables to prevent conflicts with code-based configuration
+- **Database Backup Task**: Fixed task reference path from `'backup_database_task'` to `'app.tasks.backup_database_task.backup_database_task'`
+- **Environment Configuration**: Updated environment file generators to use comments instead of actual `CELERY_BEAT_SCHEDULE` variables
+
+### Improved
+
+- **Celery Beat Reliability**: Celery Beat now creates proper `celerybeat-schedule.db` files instead of malformed JSON-based filenames
+- **Task Scheduling**: All periodic tasks are now configured exclusively in code (`app/core/celery.py`) for better maintainability
+- **Error Prevention**: Eliminated the creation of files with names like `{"cleanup_tokens": {"task": "...", "schedule": ...}}.db`
+
+### Technical Details
+
+- Celery Beat schedule configuration moved entirely to code-based approach
+- Environment files now contain only comments about where task scheduling is configured
+- Fixed generator templates to prevent future environment variable conflicts
+- Improved task discovery and execution reliability
+
 ## [0.1.4] - 2025-01-08
 
 ### Added

@@ -448,8 +448,8 @@ CELERY_RESULT_EXPIRES=3600
 # Task routing (JSON format)
 CELERY_TASK_ROUTES={}
 
-# Periodic tasks schedule (JSON format)
-CELERY_BEAT_SCHEDULE={"cleanup_tokens": {"task": "app.tasks.cleanup_expired_tokens", "schedule": 3600.0}}
+# Periodic tasks schedule (configured in code)
+# CELERY_BEAT_SCHEDULE is configured in app/core/celery.py
 
 '''
         
@@ -484,7 +484,7 @@ CELERY_RESULT_EXPIRES=3600
 # Task routing (JSON format)
 CELERY_TASK_ROUTES={{}}
 
-# Periodic tasks schedule (JSON format)
-CELERY_BEAT_SCHEDULE={{"cleanup_tokens": {{"task": "app.tasks.cleanup_expired_tokens", "schedule": 3600.0}}}}
+# Periodic tasks schedule (configured in code)
+# CELERY_BEAT_SCHEDULE is configured in app/core/celery.py
 
 '''
