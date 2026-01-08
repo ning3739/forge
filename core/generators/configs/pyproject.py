@@ -104,6 +104,14 @@ packages = ["app"]
         if self.config_reader.has_auth():
             dependencies.extend(self._get_auth_dependencies())
         
+        # Redis dependencies
+        if self.config_reader.has_redis():
+            dependencies.extend(self._get_redis_dependencies())
+        
+        # Celery dependencies
+        if self.config_reader.has_celery():
+            dependencies.extend(self._get_celery_dependencies())
+        
         return dependencies
     
     def _get_database_dependencies(self) -> list:
@@ -132,6 +140,10 @@ packages = ["app"]
             deps.extend([
                 'pymysql>=1.1.0',
                 'aiomysql>=0.2.0'
+            ])
+        elif db_type == "SQLite":
+            deps.extend([
+                'aiosqlite>=0.19.0'
             ])
         
         # migrationutility
@@ -177,6 +189,19 @@ packages = ["app"]
             ])
         
         return dev_deps
+    
+    def _get_redis_dependencies(self) -> list:
+        """Get Redis related dependencies"""
+        return [
+            'redis>=5.0.0',  # Redis client
+        ]
+    
+    def _get_celery_dependencies(self) -> list:
+        """Get Celery related dependencies"""
+        return [
+            'celery>=5.3.0',  # Celery task queue
+            'flower>=2.0.0',  # Celery monitoring tool
+        ]
     
     def _build_pytest_config(self) -> str:
         """Build pytest configuration"""

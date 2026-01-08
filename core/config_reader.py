@@ -17,7 +17,7 @@ class ConfigReader:
     
     # Configuration validation rules
     REQUIRED_FIELDS = ['project_name', 'database', 'features']
-    VALID_DATABASE_TYPES = ['PostgreSQL', 'MySQL']
+    VALID_DATABASE_TYPES = ['PostgreSQL', 'MySQL', 'SQLite']
     VALID_ORM_TYPES = ['SQLModel', 'SQLAlchemy']
     VALID_AUTH_TYPES = ['basic', 'complete']
     
@@ -201,6 +201,36 @@ class ConfigReader:
     def has_docker(self) -> bool:
         """Check if Docker configuration is included"""
         return self.get_features().get('docker', False)
+    
+    def has_redis(self) -> bool:
+        """Check if Redis is enabled"""
+        redis_config = self.get_features().get('redis', False)
+        # Support both boolean and object format
+        if isinstance(redis_config, bool):
+            return redis_config
+        return redis_config.get('enabled', False)
+    
+    def get_redis_features(self) -> list:
+        """Get Redis features list"""
+        redis_config = self.get_features().get('redis', {})
+        if isinstance(redis_config, bool):
+            return ["caching", "sessions", "queues"] if redis_config else []
+        return redis_config.get('features', [])
+    
+    def has_celery(self) -> bool:
+        """Check if Celery is enabled"""
+        celery_config = self.get_features().get('celery', False)
+        # Support both boolean and object format
+        if isinstance(celery_config, bool):
+            return celery_config
+        return celery_config.get('enabled', False)
+    
+    def get_celery_features(self) -> list:
+        """Get Celery features list"""
+        celery_config = self.get_features().get('celery', {})
+        if isinstance(celery_config, bool):
+            return ["background_tasks", "scheduled_tasks", "task_monitoring"] if celery_config else []
+        return celery_config.get('features', [])
     
     def get_metadata(self) -> Optional[Dict[str, Any]]:
         """Get metadata information"""

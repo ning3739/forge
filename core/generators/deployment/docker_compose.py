@@ -40,8 +40,10 @@ class DockerComposeGenerator(BaseTemplateGenerator):
     container_name: {project_name}
     ports:
       - "8000:8000"
+    env_file:
+      - ./secret/.env.production
     environment:
-      - APP_ENV=production
+      - ENV=production
 '''.format(project_name=self.config_reader.get_project_name())
         
         # Add database connection environment variables
@@ -53,11 +55,31 @@ class DockerComposeGenerator(BaseTemplateGenerator):
             content += '''      - DATABASE_URL=mysql://root:mysql@db:3306/{project_name}
 '''.format(project_name=self.config_reader.get_project_name())
         
+        # Add Redis environment variables if enabled
+        if self.config_reader.has_redis():
+            content += '''      - REDIS_CONNECTION_URL=redis://redis:6379
+'''
+        
+        # Add Celery environment variables if enabled
+        if self.config_reader.has_celery():
+            content += '''      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+'''
+        
+        # Build dependencies with proper conditions
         content += '''    volumes:
       - ./app:/app/app
     depends_on:
-      - db
-    restart: unless-stopped
+      db-migrate:
+        condition: service_completed_successfully
+'''
+        
+        if self.config_reader.has_redis():
+            content += '''      redis:
+        condition: service_started
+'''
+        
+        content += '''    restart: unless-stopped
     networks:
       - app-network
 
@@ -65,6 +87,17 @@ class DockerComposeGenerator(BaseTemplateGenerator):
         
         # Add database service
         content += self._build_database_service()
+        
+        # Add database migration service
+        content += self._build_database_migration_service()
+        
+        # Add Redis service if enabled
+        if self.config_reader.has_redis():
+            content += self._build_redis_service()
+        
+        # Add Celery services if enabled
+        if self.config_reader.has_celery():
+            content += self._build_celery_services()
         
         return content
     
@@ -88,6 +121,10 @@ class DockerComposeGenerator(BaseTemplateGenerator):
     restart: unless-stopped
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      timeout: 20s
+      retries: 10
 
 '''.format(project_name=project_name)
         
@@ -105,10 +142,125 @@ class DockerComposeGenerator(BaseTemplateGenerator):
     restart: unless-stopped
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pmysql"]
+      timeout: 20s
+      retries: 10
 
 '''.format(project_name=project_name)
         
         return ''
+    
+    def _build_database_migration_service(self) -> str:
+        """Build database migration service configuration"""
+        project_name = self.config_reader.get_project_name()
+        
+        # Build environment variables
+        env_vars = '''      - ENV=production
+'''
+        
+        # Add database connection
+        db_type = self.config_reader.get_database_type()
+        if db_type == "PostgreSQL":
+            env_vars += '''      - DATABASE_URL=postgresql://postgres:postgres@db:5432/{project_name}
+'''.format(project_name=project_name)
+        elif db_type == "MySQL":
+            env_vars += '''      - DATABASE_URL=mysql://root:mysql@db:3306/{project_name}
+'''.format(project_name=project_name)
+        
+        return '''  db-migrate:
+    build: .
+    container_name: {project_name}_db_migrate
+    command: sh -c "alembic revision --autogenerate -m 'Auto migration' && alembic upgrade head"
+    env_file:
+      - ./secret/.env.production
+    environment:
+{env_vars}    volumes:
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+'''.format(project_name=project_name, env_vars=env_vars)
+    
+    def _build_redis_service(self) -> str:
+        """Build Redis service configuration"""
+        project_name = self.config_reader.get_project_name()
+        
+        return '''  redis:
+    image: redis:7-alpine
+    container_name: {project_name}_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+'''.format(project_name=project_name)
+    
+    def _build_celery_services(self) -> str:
+        """Build Celery services configuration"""
+        project_name = self.config_reader.get_project_name()
+        
+        # Build environment variables
+        env_vars = '''      - ENV=production
+'''
+        
+        # Add database connection
+        db_type = self.config_reader.get_database_type()
+        if db_type == "PostgreSQL":
+            env_vars += '''      - DATABASE_URL=postgresql://postgres:postgres@db:5432/{project_name}
+'''.format(project_name=project_name)
+        elif db_type == "MySQL":
+            env_vars += '''      - DATABASE_URL=mysql://root:mysql@db:3306/{project_name}
+'''.format(project_name=project_name)
+        
+        # Add Redis and Celery environment variables
+        env_vars += '''      - REDIS_CONNECTION_URL=redis://redis:6379
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+'''
+        
+        # Build dependencies with proper conditions
+        depends_on_str = '''      db-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+'''
+        
+        return '''  celery-worker:
+    build: .
+    container_name: {project_name}_celery_worker
+    command: celery -A app.core.celery.celery_app worker --loglevel=info
+    env_file:
+      - ./secret/.env.production
+    environment:
+{env_vars}    volumes:
+      - ./app:/app/app
+    depends_on:
+{depends_on_str}    restart: unless-stopped
+    networks:
+      - app-network
+
+  celery-beat:
+    build: .
+    container_name: {project_name}_celery_beat
+    command: celery -A app.core.celery.celery_app beat --loglevel=info
+    env_file:
+      - ./secret/.env.production
+    environment:
+{env_vars}    volumes:
+      - ./app:/app/app
+    depends_on:
+{depends_on_str}    restart: unless-stopped
+    networks:
+      - app-network
+
+'''.format(project_name=project_name, env_vars=env_vars, depends_on_str=depends_on_str)
     
     def _build_volumes(self) -> str:
         """Build volumes configuration"""

@@ -67,8 +67,9 @@ RUN apt-get update && apt-get install -y \\
 
 '''
         
-        content += '''# Copy dependency files
-COPY pyproject.toml ./
+        content += '''# Copy dependency files and alembic configuration
+COPY pyproject.toml README.md alembic.ini ./
+COPY alembic ./alembic
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \\
@@ -81,6 +82,9 @@ RUN pip install --no-cache-dir --upgrade pip && \\
         """Build application copy"""
         return '''# Copy application code
 COPY ./app ./app
+
+# Set Python path to include current directory
+ENV PYTHONPATH=/app
 
 '''
     

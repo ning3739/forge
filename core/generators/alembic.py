@@ -66,8 +66,9 @@ class AlembicGenerator:
             db_url_example = "postgresql://user:password@localhost/dbname"
         elif db_type == "MySQL":
             db_url_example = "mysql://user:password@localhost/dbname"
+        elif db_type == "SQLite":
+            db_url_example = "sqlite:///./database.db"
         else:
-            # Should not reach here, only supports PostgreSQL and MySQL
             raise ValueError(f"Unsupported database type: {db_type}")
         
         content = f'''# Alembic configuration file
@@ -148,8 +149,18 @@ datefmt = %H:%M:%S
             default_url = f"postgresql://user:password@localhost:5432/{db_name}_dev"
         elif db_type == "MySQL":
             default_url = f"mysql://user:password@localhost:3306/{db_name}_dev"
+        elif db_type == "SQLite":
+            default_url = f"sqlite:///./{db_name}.db"
         else:
             raise ValueError(f"Unsupported database type: {db_type}")
+        
+        # Generate model imports based on authentication type
+        auth_type = self.config_reader.get_auth_type() if self.config_reader.has_auth() else None
+        
+        model_imports = "# Import all models so Alembic can detect them\nfrom app.models.user import User"
+        
+        if auth_type == "complete":
+            model_imports += "\nfrom app.models.token import RefreshToken, VerificationCode"
         
         content = f'''"""Alembic environment configuration - SQLModel (async version)"""
 from logging.config import fileConfig
@@ -169,9 +180,7 @@ if env_file.exists():
 # Import SQLModel Base
 from sqlmodel import SQLModel
 
-# Import all models so Alembic can detect them
-from app.models.user import User
-from app.models.token import RefreshToken, VerificationCode
+{model_imports}
 
 # Alembic Config object
 config = context.config
@@ -188,11 +197,12 @@ target_metadata = SQLModel.metadata
 def get_url():
     """Get database URL from environment variables"""
     url = os.getenv("DATABASE_URL", "{default_url}")
-    # Convert to async driver
+    # Convert to async driver (SQLite doesn't need conversion)
     if url.startswith("mysql://"):
         url = url.replace("mysql://", "mysql+aiomysql://", 1)
     elif url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    # SQLite URLs remain unchanged (sqlite:/// or sqlite+aiosqlite:///)
     return url
 
 
@@ -261,8 +271,18 @@ else:
             default_url = f"postgresql://user:password@localhost:5432/{db_name}_dev"
         elif db_type == "MySQL":
             default_url = f"mysql://user:password@localhost:3306/{db_name}_dev"
+        elif db_type == "SQLite":
+            default_url = f"sqlite:///./{db_name}.db"
         else:
             raise ValueError(f"Unsupported database type: {db_type}")
+        
+        # Generate model imports based on authentication type
+        auth_type = self.config_reader.get_auth_type() if self.config_reader.has_auth() else None
+        
+        model_imports = "# Import all models so Alembic can detect them\nfrom app.models.user import User"
+        
+        if auth_type == "complete":
+            model_imports += "\nfrom app.models.token import RefreshToken, VerificationCode"
         
         content = f'''"""Alembic environment configuration - SQLAlchemy (async version)"""
 from logging.config import fileConfig
@@ -282,9 +302,7 @@ if env_file.exists():
 # Import Base
 from app.core.database import Base
 
-# Import all models so Alembic can detect them
-from app.models.user import User
-from app.models.token import RefreshToken, VerificationCode
+{model_imports}
 
 # Alembic Config object
 config = context.config
@@ -301,11 +319,12 @@ target_metadata = Base.metadata
 def get_url():
     """Get database URL from environment variables"""
     url = os.getenv("DATABASE_URL", "{default_url}")
-    # Convert to async driver
+    # Convert to async driver (SQLite doesn't need conversion)
     if url.startswith("mysql://"):
         url = url.replace("mysql://", "mysql+aiomysql://", 1)
     elif url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    # SQLite URLs remain unchanged (sqlite:/// or sqlite+aiosqlite:///)
     return url
 
 

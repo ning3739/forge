@@ -29,8 +29,10 @@ class RouterAggregatorGenerator(BaseTemplateGenerator):
             "from .users import router as user_router",
         ]
         
-        content = '''# Export all routers
-__all__ = ["auth_router", "user_router"]
+        exports = ["auth_router", "user_router"]
+        
+        content = f'''# Export all routers
+__all__ = {exports}
 '''
         
         self.file_ops.create_python_file(

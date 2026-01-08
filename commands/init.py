@@ -18,6 +18,7 @@ from ui.components import (
     console
 )
 from ui.colors import get_colors
+from core.utils.version_checker import check_for_updates
 from core.version import __version__
 from core.utils import ProjectConfig
 from core.project_generator import ProjectGenerator
@@ -29,7 +30,8 @@ from core.project_generator import ProjectGenerator
 
 DATABASE_CHOICES = [
     "PostgreSQL (Recommended)",
-    "MySQL"
+    "MySQL", 
+    "SQLite (Development/Small Projects)"
 ]
 
 ORM_CHOICES = [
@@ -55,7 +57,9 @@ DEFAULT_NON_INTERACTIVE_CONFIG = {
         "cors": True,
         "dev_tools": True,
         "testing": True,
-        "docker": True
+        "docker": True,
+        "redis": True,
+        "celery": True
     }
 }
 
@@ -72,23 +76,12 @@ def extract_choice(choice: str, default: str = "") -> str:
 def get_auth_config(auth_type: str) -> Dict[str, Any]:
     """generate configuration based on authentication type"""
     if "Complete" in auth_type:
-        console.print(
-            "\n  [dim]ℹ️  Complete JWT Auth includes:[/dim]\n"
-            "  [dim]   • Email verification[/dim]\n"
-            "  [dim]   • Password reset[/dim]\n"
-            "  [dim]   • Email service (SMTP)[/dim]\n"
-            "  [dim]   • Refresh Token[/dim]\n"
-        )
         return {
             "type": "complete",
             "refresh_token": True,
             "features": ["Email Verification", "Password Reset", "Email Service"]
         }
     else:
-        console.print(
-            "\n  [dim]ℹ️  Basic JWT Auth includes:[/dim]\n"
-            "  [dim]   • Login and Register only[/dim]\n"
-        )
         return {
             "type": "basic",
             "refresh_token": False,
@@ -146,13 +139,43 @@ def collect_features(style: questionary.Style) -> Dict[str, Any]:
         style=style
     ).ask()
     
-    return {
-        "auth": get_auth_config(auth_choice),
+    # Redis configuration
+    enable_redis = questionary.confirm(
+        "Enable Redis (caching, sessions, queues)?", 
+        default=True,
+        auto_enter=True,
+        style=style
+    ).ask()
+    
+    # Ask about Celery only if Redis is enabled (Celery needs a message broker)
+    enable_celery = False
+    if enable_redis:
+        enable_celery = questionary.confirm(
+            "Enable Celery (background tasks, job queues)?",
+            default=True,
+            auto_enter=True,
+            style=style
+        ).ask()
+    
+    # Show auth info after Redis/Celery questions
+    auth_config = get_auth_config(auth_choice)
+    
+    features = {
+        "auth": auth_config,
         "cors": questionary.confirm("Enable CORS?", default=True, auto_enter=True, style=style).ask(),
         "dev_tools": questionary.confirm("Include dev tools (Black + Ruff)?", default=True, auto_enter=True, style=style).ask(),
         "testing": questionary.confirm("Include testing setup (pytest)?", default=True, auto_enter=True, style=style).ask(),
         "docker": questionary.confirm("Include Docker configs?", default=True, auto_enter=True, style=style).ask()
     }
+    
+    # Add Redis and Celery to features if enabled
+    if enable_redis:
+        features["redis"] = True
+    
+    if enable_celery:
+        features["celery"] = True
+    
+    return features
 
 
 # ============================================================================
@@ -188,8 +211,7 @@ def handle_existing_project(name: str, style: questionary.Style) -> bool:
         "What would you like to do?",
         choices=[
             "Cancel - Keep existing project",
-            "Overwrite - Regenerate entire project",
-            "Update - Modify existing configuration"
+            "Overwrite - Regenerate entire project"
         ],
         style=style
     ).ask()
@@ -197,12 +219,19 @@ def handle_existing_project(name: str, style: questionary.Style) -> bool:
     if not action or "Cancel" in action:
         console.print(f"\n[{colors.info}]Operation cancelled.[/{colors.info}]")
         raise typer.Exit(code=0)
-    elif "Update" in action:
-        console.print(f"\n[{colors.warning}]Update mode is not yet implemented.[/{colors.warning}]")
-        console.print(f"[{colors.text_muted}]Please manually edit .forge/config.json or choose Overwrite.[/{colors.text_muted}]")
-        raise typer.Exit(code=0)
+    elif "Overwrite" in action:
+        # Remove existing project directory
+        import shutil
+        project_path = Path.cwd() / name
+        try:
+            console.print(f"\n[{colors.warning}]Removing existing project...[/{colors.warning}]")
+            shutil.rmtree(project_path)
+            console.print(f"[{colors.success}]✅ Existing project removed.[/{colors.success}]")
+        except Exception as e:
+            console.print(f"\n[bold red]Error removing existing project:[/bold red] {str(e)}")
+            raise typer.Exit(code=1)
     
-    return True  # Overwrite selected, continue
+    return True  # Continue with project generation
 
 
 def build_project_config(name: str, database: str, orm: str, migration_tool: Optional[str], features: Dict[str, Any]) -> Dict[str, Any]:
@@ -413,7 +442,7 @@ def show_email_config_warning() -> None:
     console.print(warning_panel)
 
 
-def show_next_steps(name: str) -> None:
+def show_next_steps(name: str, features: Dict[str, Any]) -> None:
     """Show next steps"""
     colors = get_colors()
     console.print()
@@ -429,10 +458,28 @@ def show_next_steps(name: str) -> None:
         f"[bold {colors.secondary}]uv sync[/bold {colors.secondary}]  [{colors.text_muted}]# Install dependencies[/{colors.text_muted}]\n"
         f"[bold {colors.neon_green}]uv run uvicorn app.main:app --reload[/bold {colors.neon_green}]  [{colors.text_muted}]# Start server[/{colors.text_muted}]"
     )
+    
+    # Add Celery instructions if enabled
+    celery_enabled = features.get("celery", False)
+    if isinstance(celery_enabled, bool) and celery_enabled:
+        content += (
+            f"\n\n[{colors.text_muted}]For background tasks (Celery):[/{colors.text_muted}]\n"
+            f"[bold {colors.warning}]uv run celery -A app.core.celery.celery_app worker --loglevel=info[/bold {colors.warning}]  [{colors.text_muted}]# Start Celery worker[/{colors.text_muted}]\n"
+            f"[bold {colors.info}]uv run celery -A app.core.celery.celery_app beat --loglevel=info[/bold {colors.info}]  [{colors.text_muted}]# Start scheduler (separate terminal)[/{colors.text_muted}]\n"
+            f"[bold {colors.secondary}]uv run celery -A app.core.celery.celery_app flower[/bold {colors.secondary}]  [{colors.text_muted}]# Start monitoring (optional)[/{colors.text_muted}]"
+        )
+    elif isinstance(celery_enabled, dict) and celery_enabled.get("enabled", False):
+        # Support legacy format
+        content += (
+            f"\n\n[{colors.text_muted}]For background tasks (Celery):[/{colors.text_muted}]\n"
+            f"[bold {colors.warning}]uv run celery -A app.core.celery.celery_app worker --loglevel=info[/bold {colors.warning}]  [{colors.text_muted}]# Start Celery worker[/{colors.text_muted}]\n"
+            f"[bold {colors.info}]uv run celery -A app.core.celery.celery_app beat --loglevel=info[/bold {colors.info}]  [{colors.text_muted}]# Start scheduler (separate terminal)[/{colors.text_muted}]\n"
+            f"[bold {colors.secondary}]uv run celery -A app.core.celery.celery_app flower[/bold {colors.secondary}]  [{colors.text_muted}]# Start monitoring (optional)[/{colors.text_muted}]"
+        )
 
     panel = create_highlighted_panel(
         content,
-        title="Next Steps",
+        title="🚀  Next Steps",
         accent_color=colors.neon_pink,
         icon=":rocket:"
     )
@@ -447,6 +494,10 @@ def show_next_steps(name: str) -> None:
 def execute_init(name: Optional[str] = None, interactive: bool = True) -> Dict[str, Any]:
     """Execute init command"""
     show_logo()
+    
+    # Check for updates at the start of init command (interactive mode)
+    check_for_updates(silent=False, interactive=interactive)
+    
     style = create_questionary_style()
 
     if interactive:
@@ -484,7 +535,7 @@ def execute_init(name: Optional[str] = None, interactive: bool = True) -> Dict[s
 
     # Show configuration summary and next steps
     show_config_summary(name, database, orm, migration_tool, features)
-    show_next_steps(name)
+    show_next_steps(name, features)
 
     return {
         "project_name": name,

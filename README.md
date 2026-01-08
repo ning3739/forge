@@ -45,6 +45,16 @@ Forge is a powerful command-line tool that helps you quickly bootstrap productio
 pip install ningfastforge
 ```
 
+#### Upgrade to Latest Version
+
+If you already have Forge installed, upgrade to the latest version:
+
+```bash
+pip install --upgrade ningfastforge
+```
+
+> 💡 **Tip**: Always use the latest version to get new features, bug fixes, and security updates!
+
 #### From Source
 
 ```bash
@@ -57,6 +67,14 @@ uv sync
 
 # Or with pip
 pip install -e .
+```
+
+### Verify Installation
+
+Check that Forge is installed correctly and see the current version:
+
+```bash
+forge --version
 ```
 
 ### Create Your First Project

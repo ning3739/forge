@@ -5,6 +5,7 @@ from typing import Optional
 from ui.logo import show_logo
 from commands.init import init_command
 from core.version import __version__
+from core.utils.version_checker import check_for_updates
 
 # Create main application
 app = typer.Typer(
@@ -46,6 +47,9 @@ def main_callback(
         show_logo()
         typer.echo()  # Empty line
         typer.echo(ctx.get_help())  # Show help information
+        
+        # Check for updates when showing help (non-interactive)
+        check_for_updates(silent=False, interactive=False)
 
 
 def main():

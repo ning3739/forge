@@ -50,6 +50,8 @@ class GeneratorOrchestrator:
         from core.generators.configs.gitignore import GitignoreGenerator
         from core.generators.configs.env import EnvGenerator
         from core.generators.configs.license import LicenseGenerator
+        from core.generators.configs.redis import RedisConfigGenerator
+        from core.generators.configs.celery import CeleryConfigGenerator
         
         # Deployment config generators
         from core.generators.deployment.dockerfile import DockerfileGenerator
@@ -74,6 +76,7 @@ class GeneratorOrchestrator:
         from core.generators.templates.database.connection import DatabaseConnectionGenerator
         from core.generators.templates.database.mysql import DatabaseMySQLGenerator
         from core.generators.templates.database.postgresql import DatabasePostgreSQLGenerator
+        from core.generators.templates.database.sqlite import SQLiteGenerator
         from core.generators.templates.database.dependencies import DatabaseDependenciesGenerator
         
         # Model generators
@@ -102,6 +105,14 @@ class GeneratorOrchestrator:
         # Email generators
         from core.generators.templates.email.email import EmailServiceGenerator
         from core.generators.templates.email.email_template import EmailTemplateGenerator
+        
+        # Task generators
+        from core.generators.templates.tasks.backup_database_task import BackupDatabaseTaskGenerator
+        from core.generators.templates.tasks.tasks_init import TasksInitGenerator
+        
+        # App core generators
+        from core.generators.templates.app.celery import CeleryAppGenerator
+        from core.generators.templates.app.redis import RedisAppGenerator
         
         # Test generators
         from core.generators.templates.tests.conftest import ConftestGenerator

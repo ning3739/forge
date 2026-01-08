@@ -17,11 +17,17 @@ class DatabaseConnectionGenerator(BaseTemplateGenerator):
         """generate app/core/database/connection.py"""
         db_type = self.config_reader.get_database_type()
         
+        # SQLite uses a different connection pattern, skip this generator
+        if db_type == "SQLite":
+            return
+        
         # determine management based on database typegeneratorname
         if db_type == "PostgreSQL":
             db_manager = "postgresql_manager"
-        else:  # MySQL
+        elif db_type == "MySQL":
             db_manager = "mysql_manager"
+        else:  # SQLite
+            db_manager = "sqlite_manager"
         
         imports = [
             "from typing import Any, Optional",

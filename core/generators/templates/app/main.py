@@ -1,4 +1,4 @@
-"""Main.py generategenerator"""
+"""Main.py generator"""
 from core.decorators import Generator
 from pathlib import Path
 from .base import BaseTemplateGenerator
@@ -23,7 +23,7 @@ class MainGenerator(BaseTemplateGenerator):
             self._generate_basic_main()
     
     def _generate_basic_main(self) -> None:
-        """generatebase main.py(noneauthentication)"""
+        """generate base main.py (no authentication)"""
         imports = [
             "import os",
             "import uvicorn",
@@ -35,10 +35,15 @@ class MainGenerator(BaseTemplateGenerator):
             "",
             "from app.core.config.settings import settings",
             "from app.core.logger import logger_manager",
-            "from app.core.database import db_manager",  # Database is nowrequired
+            "from app.core.database import db_manager",
         ]
         
-        content = '''# Create LoggerManager instance
+        # Add Redis import if enabled
+        if self.config_reader.has_redis():
+            imports.append("from app.core.redis import redis_manager")
+        
+        # Build lifespan function
+        lifespan_content = '''# Create LoggerManager instance
 logger_manager.setup()
 
 # Create Logger instance
@@ -52,27 +57,55 @@ async def lifespan(_app: FastAPI):
     logger.info(f"🚧 You are working in {os.getenv('ENV', 'development')} environment")
     
     try:
-        # Initializedatabase connection
+        # Initialize database connection
         await db_manager.initialize()
         logger.info("🎉 Database connections initialized successfully")
         await db_manager.test_connections()
         logger.info("🎉 Database connections test successfully")
     except Exception as e:
         logger.error(f"❌ Database connection failed: {e}")
-        logger.warning("⚠️ Application will start without database connections")
+        logger.warning("⚠️ Application will start without database connections")'''
+        
+        # Add Redis initialization if enabled
+        if self.config_reader.has_redis():
+            lifespan_content += '''
+    
+    try:
+        # Initialize Redis connection
+        await redis_manager.initialize_async()
+        logger.info("🎉 Redis connections initialized successfully")
+        await redis_manager.async_test_connection()
+        logger.info("🎉 Redis connections test successfully")
+    except Exception as e:
+        logger.error(f"❌ Redis connection failed: {e}")
+        logger.warning("⚠️ Application will start without Redis connections")'''
+        
+        lifespan_content += '''
     
     yield
     
-    # closedatabase connection
+    # Close database connection
     try:
         await db_manager.close()
         logger.info("🎉 Database connections closed successfully")
     except Exception as e:
         logger.error(f"❌ Database connection closed failed: {e}")
-        logger.warning("⚠️ Database connection closed failed")
-'''
+        logger.warning("⚠️ Database connection closed failed")'''
         
-        content += '''
+        # Add Redis cleanup if enabled
+        if self.config_reader.has_redis():
+            lifespan_content += '''
+    
+    # Close Redis connections
+    try:
+        await redis_manager.close()
+        logger.info("🎉 Redis connections closed successfully")
+    except Exception as e:
+        logger.error(f"❌ Redis connection closed failed: {e}")
+        logger.warning("⚠️ Redis connection closed failed")'''
+        
+        # Build main app content
+        app_content = '''
 
 # Create FastAPI instance
 app = FastAPI(
@@ -83,10 +116,10 @@ app = FastAPI(
 )
 
 
-# globalexceptionprocessgenerator
+# Global exception handlers
 @app.exception_handler(HTTPException)
 async def http_exception_handler(_request: Request, exc: HTTPException):
-    """HTTP exceptionprocessgenerator"""
+    """HTTP exception handler"""
     logger.error(f"HTTPException: {exc}")
     error_detail = exc.detail
     
@@ -111,11 +144,12 @@ async def general_exception_handler(_request: Request, exc: Exception):
     )
 
 
-# CORS middleware
-'''
+# CORS middleware'''
         
+        # Add CORS configuration if enabled
         if self.config_reader.has_cors():
-            content += '''allow_origins = [x.strip() for x in settings.cors.CORS_ALLOWED_ORIGINS.split(',') if x.strip()]
+            app_content += '''
+allow_origins = [x.strip() for x in settings.cors.CORS_ALLOWED_ORIGINS.split(',') if x.strip()]
 allow_methods = [x.strip() for x in settings.cors.CORS_ALLOW_METHODS.split(',') if x.strip()]
 allow_headers = [x.strip() for x in settings.cors.CORS_ALLOW_HEADERS.split(',') if x.strip()]
 allow_credentials = settings.cors.CORS_ALLOW_CREDENTIALS
@@ -128,12 +162,12 @@ app.add_middleware(
     allow_headers=allow_headers,
     allow_credentials=allow_credentials,
     expose_headers=expose_headers,
-)
-'''
+)'''
         
-        content += '''
+        app_content += '''
 
-# staticfile
+
+# Static files
 static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
@@ -166,7 +200,7 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
-# startapplication
+# Start application
 if __name__ == "__main__":
     if os.getenv("ENV") == "development":
         logger.info("🚩 Starting the application in development mode...")
@@ -175,8 +209,9 @@ if __name__ == "__main__":
             host="127.0.0.1",
             port=8000,
             reload=True,
-        )
-'''
+        )'''
+        
+        content = lifespan_content + app_content
         
         self.file_ops.create_python_file(
             file_path="app/main.py",
@@ -199,19 +234,28 @@ if __name__ == "__main__":
             "",
             "from app.core.config.settings import settings",
             "from app.core.logger import logger_manager",
-            "from app.core.database import db_manager",  # Database is nowrequired
+            "from app.core.database import db_manager",
         ]
         
-        # addrouterimport
+        # Add Redis import if enabled
+        if self.config_reader.has_redis():
+            imports.append("from app.core.redis import redis_manager")
+        
+        # Add router imports
+        router_imports = [
+            "    auth_router,",
+            "    user_router,",
+        ]
+        
         imports.extend([
             "",
             "from app.routers.v1 import (",
-            "    auth_router,",
-            "    user_router,",
+        ] + router_imports + [
             ")",
         ])
         
-        content = '''# Create LoggerManager instance
+        # Build lifespan function
+        lifespan_content = '''# Create LoggerManager instance
 logger_manager.setup()
 
 # Create Logger instance
@@ -225,27 +269,55 @@ async def lifespan(_app: FastAPI):
     logger.info(f"🚧 You are working in {os.getenv('ENV', 'development')} environment")
     
     try:
-        # Initializedatabase connection
+        # Initialize database connection
         await db_manager.initialize()
         logger.info("🎉 Database connections initialized successfully")
         await db_manager.test_connections()
         logger.info("🎉 Database connections test successfully")
     except Exception as e:
         logger.error(f"❌ Database connection failed: {e}")
-        logger.warning("⚠️ Application will start without database connections")
+        logger.warning("⚠️ Application will start without database connections")'''
+        
+        # Add Redis initialization if enabled
+        if self.config_reader.has_redis():
+            lifespan_content += '''
+    
+    try:
+        # Initialize Redis connection
+        await redis_manager.initialize_async()
+        logger.info("🎉 Redis connections initialized successfully")
+        await redis_manager.async_test_connection()
+        logger.info("🎉 Redis connections test successfully")
+    except Exception as e:
+        logger.error(f"❌ Redis connection failed: {e}")
+        logger.warning("⚠️ Application will start without Redis connections")'''
+        
+        lifespan_content += '''
     
     yield
     
-    # closedatabase connection
+    # Close database connection
     try:
         await db_manager.close()
         logger.info("🎉 Database connections closed successfully")
     except Exception as e:
         logger.error(f"❌ Database connection closed failed: {e}")
-        logger.warning("⚠️ Database connection closed failed")
-'''
+        logger.warning("⚠️ Database connection closed failed")'''
         
-        content += '''
+        # Add Redis cleanup if enabled
+        if self.config_reader.has_redis():
+            lifespan_content += '''
+    
+    # Close Redis connections
+    try:
+        await redis_manager.close()
+        logger.info("🎉 Redis connections closed successfully")
+    except Exception as e:
+        logger.error(f"❌ Redis connection closed failed: {e}")
+        logger.warning("⚠️ Redis connection closed failed")'''
+        
+        # Build main app content
+        app_content = '''
 
 # Create FastAPI instance
 app = FastAPI(
@@ -256,10 +328,10 @@ app = FastAPI(
 )
 
 
-# globalexceptionprocessgenerator
+# Global exception handlers
 @app.exception_handler(HTTPException)
 async def http_exception_handler(_request: Request, exc: HTTPException):
-    """HTTP exceptionprocessgenerator"""
+    """HTTP exception handler"""
     logger.error(f"HTTPException: {exc}")
     error_detail = exc.detail
     
@@ -284,11 +356,12 @@ async def general_exception_handler(_request: Request, exc: Exception):
     )
 
 
-# CORS middleware
-'''
+# CORS middleware'''
         
+        # Add CORS configuration if enabled
         if self.config_reader.has_cors():
-            content += '''allow_origins = [x.strip() for x in settings.cors.CORS_ALLOWED_ORIGINS.split(',') if x.strip()]
+            app_content += '''
+allow_origins = [x.strip() for x in settings.cors.CORS_ALLOWED_ORIGINS.split(',') if x.strip()]
 allow_methods = [x.strip() for x in settings.cors.CORS_ALLOW_METHODS.split(',') if x.strip()]
 allow_headers = [x.strip() for x in settings.cors.CORS_ALLOW_HEADERS.split(',') if x.strip()]
 allow_credentials = settings.cors.CORS_ALLOW_CREDENTIALS
@@ -301,20 +374,22 @@ app.add_middleware(
     allow_headers=allow_headers,
     allow_credentials=allow_credentials,
     expose_headers=expose_headers,
-)
-'''
+)'''
         
-        content += '''
-
-# registerrouter
-app.include_router(auth_router, prefix="/api/v1")
-app.include_router(user_router, prefix="/api/v1")
+        app_content += '''
 
 
-# staticfile
+# Static files
 static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+
+# Include routers
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(user_router, prefix="/api/v1/users", tags=["Users"])'''
+        
+        app_content += '''
 
 
 # Health check endpoint
@@ -344,7 +419,7 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
-# startapplication
+# Start application
 if __name__ == "__main__":
     if os.getenv("ENV") == "development":
         logger.info("🚩 Starting the application in development mode...")
@@ -353,8 +428,9 @@ if __name__ == "__main__":
             host="127.0.0.1",
             port=8000,
             reload=True,
-        )
-'''
+        )'''
+        
+        content = lifespan_content + app_content
         
         self.file_ops.create_python_file(
             file_path="app/main.py",

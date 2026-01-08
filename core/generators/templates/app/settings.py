@@ -63,6 +63,22 @@ class ConfigSettingsGenerator(BaseTemplateGenerator):
                 "class": "CORSSettings"
             })
         
+        # Redis configuration (if enabled)
+        if self.config_reader.has_redis():
+            config_modules.append({
+                "import": "from app.core.config.modules.redis import RedisSettings",
+                "property": "redis",
+                "class": "RedisSettings"
+            })
+        
+        # Celery configuration (if enabled)
+        if self.config_reader.has_celery():
+            config_modules.append({
+                "import": "from app.core.config.modules.celery import CelerySettings",
+                "property": "celery",
+                "class": "CelerySettings"
+            })
+        
         # Build import statements
         for module in config_modules:
             imports.append(module["import"])

@@ -30,8 +30,9 @@ class ConfigDatabaseGenerator(BaseTemplateGenerator):
             default_url = f"postgresql://user:password@localhost:5432/{db_name}_dev"
         elif db_type == "MySQL":
             default_url = f"mysql://user:password@localhost:3306/{db_name}_dev"
+        elif db_type == "SQLite":
+            default_url = f"sqlite:///./{db_name}.db"
         else:
-            # Should not reach here, only supports PostgreSQL and MySQL
             raise ValueError(f"Unsupported database type: {db_type}")
         
         content = f'''class DatabaseSettings(EnvBaseSettings):

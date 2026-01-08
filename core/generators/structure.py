@@ -104,9 +104,23 @@ __all__ = [{', '.join([f'"{exp}"' for exp in exports])}]
     def _create_database_init(self) -> None:
         """Create app/core/database/__init__.py"""
         db_type = self.config_reader.get_database_type()
-        db_manager = "postgresql_manager" if db_type == "PostgreSQL" else "mysql_manager"
         
-        content = f'''"""Database module"""
+        if db_type == "SQLite":
+            # SQLite uses a simpler structure
+            content = '''"""Database module"""
+from .connection import db_manager, get_database_session
+
+async def get_db():
+    """Get database session (async)"""
+    async for session in get_database_session():
+        yield session
+
+__all__ = ["db_manager", "get_db"]
+'''
+        else:
+            # PostgreSQL and MySQL use the manager pattern
+            db_manager = "postgresql_manager" if db_type == "PostgreSQL" else "mysql_manager"
+            content = f'''"""Database module"""
 from .connection import db_manager
 from .{db_type.lower()} import {db_manager}, Base
 
@@ -117,6 +131,7 @@ async def get_db():
 
 __all__ = ["db_manager", "{db_manager}", "Base", "get_db"]
 '''
+        
         self.file_ops.create_file("app/core/database/__init__.py", content, overwrite=True)
 
     def _init_alembic(self) -> None:

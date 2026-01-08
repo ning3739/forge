@@ -108,8 +108,9 @@ tests
     def _build_docs_section(self) -> str:
         """Build documentation ignore rules"""
         return '''# Documentation
-*.md
 docs
+*.md
+!README.md
 
 '''
     

@@ -38,6 +38,12 @@ class EnvGenerator(BaseTemplateGenerator):
         if self.config_reader.has_cors():
             content += self._build_cors_section(example=True)
         
+        if self.config_reader.has_redis():
+            content += self._build_redis_section(example=True)
+        
+        if self.config_reader.has_celery():
+            content += self._build_celery_section(example=True)
+        
         content += self._build_logging_section(example=True)
         
         self.file_ops.create_file(
@@ -61,6 +67,12 @@ class EnvGenerator(BaseTemplateGenerator):
         
         if self.config_reader.has_cors():
             content += self._build_cors_section(env="development")
+        
+        if self.config_reader.has_redis():
+            content += self._build_redis_section(env="development")
+        
+        if self.config_reader.has_celery():
+            content += self._build_celery_section(env="development")
         
         content += self._build_logging_section(env="development")
         
@@ -89,6 +101,12 @@ class EnvGenerator(BaseTemplateGenerator):
         
         if self.config_reader.has_cors():
             content += self._build_cors_section(env="production")
+        
+        if self.config_reader.has_redis():
+            content += self._build_redis_section(env="production")
+        
+        if self.config_reader.has_celery():
+            content += self._build_celery_section(env="production")
         
         content += self._build_logging_section(env="production")
         
@@ -160,9 +178,21 @@ POOL_SIZE=6
 POOL_MAX_OVERFLOW=2
 
 '''
+            elif db_type == "SQLite":
+                return '''# ============================================
+# Database Configuration (SQLite)
+# ============================================
+DATABASE_URL=sqlite+aiosqlite:///./database.db
+
+# Connection Pool Configuration
+ECHO=false
+POOL_PRE_PING=false
+POOL_TIMEOUT=30
+
+'''
         
         # Development/Production specific
-        db_name = f"{project_name}_dev" if env == "development" else f"{project_name}_prod"
+        db_name = project_name  # Use project name as database name, consistent with Docker
         echo = "true" if env == "development" else "false"
         
         if db_type == "PostgreSQL":
@@ -183,7 +213,7 @@ POOL_MAX_OVERFLOW=2
             return f'''# ============================================
 # Database Configuration (MySQL)
 # ============================================
-DATABASE_URL=mysql+aiomysql://root:root@localhost:3306/{db_name}
+DATABASE_URL=mysql+aiomysql://root:mysql@localhost:3306/{db_name}
 
 # Connection Pool Configuration
 ECHO={echo}
@@ -191,6 +221,19 @@ POOL_PRE_PING=true
 POOL_TIMEOUT=30
 POOL_SIZE=6
 POOL_MAX_OVERFLOW=2
+
+'''
+        elif db_type == "SQLite":
+            db_file = f"{project_name}_{env}.db" if env != "development" else f"{project_name}.db"
+            return f'''# ============================================
+# Database Configuration (SQLite)
+# ============================================
+DATABASE_URL=sqlite+aiosqlite:///./{db_file}
+
+# Connection Pool Configuration
+ECHO={echo}
+POOL_PRE_PING=false
+POOL_TIMEOUT=30
 
 '''
         
@@ -349,5 +392,99 @@ LOG_TO_CONSOLE=true
 LOG_CONSOLE_LEVEL={log_level}
 LOG_ROTATION=1 day
 LOG_RETENTION_PERIOD=7 days
+
+'''
+    
+    def _build_redis_section(self, example: bool = False, env: str = "development") -> str:
+        """Build Redis configuration section"""
+        if example:
+            return '''# ============================================
+# Redis Configuration
+# ============================================
+REDIS_CONNECTION_URL=redis://localhost:6379
+REDIS_POOL_SIZE=5
+REDIS_SOCKET_TIMEOUT=10
+REDIS_DEFAULT_TTL=3600
+
+'''
+        
+        # Environment-specific Redis configuration
+        if env == "development":
+            redis_url = "redis://localhost:6379"
+            pool_size = "3"
+        else:  # production
+            redis_url = "redis://redis:6379"
+            pool_size = "5"
+        
+        return f'''# ============================================
+# Redis Configuration
+# ============================================
+REDIS_CONNECTION_URL={redis_url}
+REDIS_POOL_SIZE={pool_size}
+REDIS_SOCKET_TIMEOUT=10
+REDIS_DEFAULT_TTL=3600
+
+'''
+    
+    def _build_celery_section(self, example: bool = False, env: str = "development") -> str:
+        """Build Celery configuration section"""
+        if example:
+            return '''# ============================================
+# Celery Configuration
+# ============================================
+CELERY_BROKER_URL=redis://localhost:6379/1
+CELERY_RESULT_BACKEND=redis://localhost:6379/2
+CELERY_TASK_SERIALIZER=json
+CELERY_RESULT_SERIALIZER=json
+CELERY_ACCEPT_CONTENT=["json"]
+CELERY_TIMEZONE=UTC
+CELERY_ENABLE_UTC=true
+CELERY_TASK_ALWAYS_EAGER=false
+CELERY_TASK_EAGER_PROPAGATES=true
+CELERY_WORKER_CONCURRENCY=4
+CELERY_WORKER_PREFETCH_MULTIPLIER=1
+CELERY_RESULT_EXPIRES=3600
+
+# Task routing (JSON format)
+CELERY_TASK_ROUTES={}
+
+# Periodic tasks schedule (JSON format)
+CELERY_BEAT_SCHEDULE={"cleanup_tokens": {"task": "app.tasks.cleanup_expired_tokens", "schedule": 3600.0}}
+
+'''
+        
+        # Environment-specific Celery configuration
+        if env == "development":
+            broker_url = "redis://localhost:6379/1"
+            result_backend = "redis://localhost:6379/2"
+            task_always_eager = "false"
+            worker_concurrency = "2"
+        else:  # production
+            broker_url = "redis://redis:6379/1"
+            result_backend = "redis://redis:6379/2"
+            task_always_eager = "false"
+            worker_concurrency = "4"
+        
+        return f'''# ============================================
+# Celery Configuration
+# ============================================
+CELERY_BROKER_URL={broker_url}
+CELERY_RESULT_BACKEND={result_backend}
+CELERY_TASK_SERIALIZER=json
+CELERY_RESULT_SERIALIZER=json
+CELERY_ACCEPT_CONTENT=["json"]
+CELERY_TIMEZONE=UTC
+CELERY_ENABLE_UTC=true
+CELERY_TASK_ALWAYS_EAGER={task_always_eager}
+CELERY_TASK_EAGER_PROPAGATES=true
+CELERY_WORKER_CONCURRENCY={worker_concurrency}
+CELERY_WORKER_PREFETCH_MULTIPLIER=1
+CELERY_RESULT_EXPIRES=3600
+
+# Task routing (JSON format)
+CELERY_TASK_ROUTES={{}}
+
+# Periodic tasks schedule (JSON format)
+CELERY_BEAT_SCHEDULE={{"cleanup_tokens": {{"task": "app.tasks.cleanup_expired_tokens", "schedule": 3600.0}}}}
 
 '''

@@ -111,8 +111,19 @@ uvicorn app.main:app --reload
 │   │   ├── config/         # Configuration modules
 │   │   │   ├── base.py
 │   │   │   ├── settings.py
-│   │   │   └── modules/    # Config modules (app, database, jwt, etc.)
-│   │   ├── database/       # Database connection
+│   │   │   └── modules/    # Config modules (app, database, jwt, redis, celery, etc.)
+│   │   ├── database/       # Database connection'''
+        
+        # Add Redis and Celery files if enabled
+        if self.config_reader.has_redis():
+            content += '''
+│   │   ├── redis.py        # Redis connection manager'''
+        
+        if self.config_reader.has_celery():
+            content += '''
+│   │   ├── celery.py       # Celery configuration'''
+        
+        content += '''
 │   │   ├── deps.py         # Dependencies
 │   │   ├── logger.py       # Logging configuration
 │   │   └── security.py     # Security utilities
@@ -128,7 +139,16 @@ uvicorn app.main:app --reload
 '''
         
         content += '''│   ├── routers/            # API routes
-│   │   └── v1/             # API version 1
+│   │   └── v1/             # API version 1'''
+        
+        # Add tasks directory if Celery is enabled
+        if self.config_reader.has_celery():
+            content += '''
+│   ├── tasks/              # Celery tasks
+│   │   ├── __init__.py     # Task exports
+│   │   └── backup_database_task.py   # Database backup task'''
+        
+        content += '''
 │   └── utils/              # Utility functions
 '''
         
@@ -201,10 +221,10 @@ DATABASE_URL=postgresql://user:password@localhost:5432/dbname
 
 ```bash
 # Create a new migration
-alembic revision --autogenerate -m "description"
+uv run alembic revision --autogenerate -m "description"
 
 # Apply migrations
-alembic upgrade head
+uv run alembic upgrade head
 ```
 
 '''
@@ -265,6 +285,10 @@ async def user_endpoint(request: Request):
     def _build_development_section(self) -> str:
         """Build development section"""
         content = '## Development\n\n'
+        
+        # Add Celery section if enabled
+        if self.config_reader.has_celery():
+            content += self._build_celery_section()
         
         if self.config_reader.has_dev_tools():
             content += self._build_dev_tools_section()
@@ -328,4 +352,89 @@ docker run -p 8000:8000 {project_name}
         return '''## License
 
 This project was created by [Forge](https://github.com/ning3739/forge) and is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+'''
+    
+    def _build_celery_section(self) -> str:
+        """Build Celery section"""
+        return '''### Background Tasks (Celery)
+
+This project uses Celery for background task processing with Redis as the message broker.
+
+#### Starting Celery Services
+
+**1. Start the main application:**
+```bash
+uv run uvicorn app.main:app --reload
+```
+
+**2. Start Celery worker:**
+```bash
+uv run celery -A app.core.celery.celery_app worker --loglevel=info
+```
+
+**3. Start Celery Beat scheduler (for periodic tasks) - in a separate terminal:**
+```bash
+uv run celery -A app.core.celery.celery_app beat --loglevel=info
+```
+
+**Alternative: Start worker with beat scheduler (single process):**
+```bash
+uv run celery -A app.core.celery.celery_app worker --beat --loglevel=info
+```
+
+**4. Start Flower monitoring tool (optional):**
+```bash
+uv run celery -A app.core.celery.celery_app flower
+# Access at http://localhost:5555
+```
+
+#### Database Backup Task
+
+The project includes an automated database backup task that supports MySQL, PostgreSQL, and SQLite:
+
+```python
+from app.tasks.backup_database_task import backup_database_task
+
+# Execute backup task asynchronously
+result = backup_database_task.delay()
+
+# With custom parameters
+result = backup_database_task.delay(
+    database_name="custom_db",
+    retention_days=7,
+    backup_dir="./custom_backups"
+)
+
+# Get task status
+print(f"Task ID: {result.id}")
+print(f"Task Status: {result.status}")
+
+# Wait for result
+task_result = result.get()
+print(f"Backup Result: {task_result}")
+```
+
+#### Scheduled Tasks
+
+The following tasks are automatically scheduled:
+
+- **Database Backup**: Runs daily at 3:00 AM, keeps backups for 30 days
+- Backups are stored locally in `./backups/database/` directory
+- Supports MySQL (mysqldump), PostgreSQL (pg_dump), and SQLite (sqlite3)
+- Automatic compression and cleanup of old backups
+
+#### Configuration
+
+Celery configuration is managed through environment variables:
+- `CELERY_BROKER_URL`: Redis broker URL (default: redis://localhost:6379/1)
+- `CELERY_RESULT_BACKEND`: Result backend URL (default: redis://localhost:6379/2)
+
+**Redis Setup:**
+```bash
+# Install and start Redis
+brew install redis  # macOS
+sudo apt-get install redis-server  # Ubuntu
+# Or use Docker: docker run -d -p 6379:6379 redis:alpine
+```
+
 '''
