@@ -196,7 +196,24 @@ POOL_TIMEOUT=30
         echo = "true" if env == "development" else "false"
         
         if db_type == "PostgreSQL":
-            return f'''# ============================================
+            if env == "production":
+                # Use Docker service name for production
+                return f'''# ============================================
+# Database Configuration (PostgreSQL)
+# ============================================
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/{db_name}
+
+# Connection Pool Configuration
+ECHO={echo}
+POOL_PRE_PING=true
+POOL_TIMEOUT=30
+POOL_SIZE=6
+POOL_MAX_OVERFLOW=2
+
+'''
+            else:
+                # Use localhost for development
+                return f'''# ============================================
 # Database Configuration (PostgreSQL)
 # ============================================
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/{db_name}
@@ -210,7 +227,24 @@ POOL_MAX_OVERFLOW=2
 
 '''
         elif db_type == "MySQL":
-            return f'''# ============================================
+            if env == "production":
+                # Use Docker service name for production
+                return f'''# ============================================
+# Database Configuration (MySQL)
+# ============================================
+DATABASE_URL=mysql+aiomysql://root:mysql@db:3306/{db_name}
+
+# Connection Pool Configuration
+ECHO={echo}
+POOL_PRE_PING=true
+POOL_TIMEOUT=30
+POOL_SIZE=6
+POOL_MAX_OVERFLOW=2
+
+'''
+            else:
+                # Use localhost for development
+                return f'''# ============================================
 # Database Configuration (MySQL)
 # ============================================
 DATABASE_URL=mysql+aiomysql://root:mysql@localhost:3306/{db_name}
@@ -413,7 +447,7 @@ REDIS_DEFAULT_TTL=3600
             redis_url = "redis://localhost:6379"
             pool_size = "3"
         else:  # production
-            redis_url = "redis://redis:6379"
+            redis_url = "redis://redis:6379"  # Use Docker service name for production
             pool_size = "5"
         
         return f'''# ============================================
@@ -460,8 +494,8 @@ CELERY_TASK_ROUTES={}
             task_always_eager = "false"
             worker_concurrency = "2"
         else:  # production
-            broker_url = "redis://redis:6379/1"
-            result_backend = "redis://redis:6379/2"
+            broker_url = "redis://redis:6379/1"  # Use Docker service name for production
+            result_backend = "redis://redis:6379/2"  # Use Docker service name for production
             task_always_eager = "false"
             worker_concurrency = "4"
         

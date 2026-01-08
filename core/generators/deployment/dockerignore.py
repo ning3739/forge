@@ -91,6 +91,7 @@ env
 .env
 .env.*
 !.env.example
+!secret/.env.*
 
 '''
     

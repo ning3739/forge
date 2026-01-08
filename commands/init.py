@@ -365,6 +365,22 @@ def build_config_summary_lines(name: str, database: str, orm: str, migration_too
                 f"[{colors.text_muted}]  • {', '.join(auth_features)}[/{colors.text_muted}]"
             )
 
+    # Redis and Celery configuration
+    redis_enabled = features.get("redis", False)
+    celery_enabled = features.get("celery", False)
+    
+    if redis_enabled or celery_enabled:
+        cache_queue_items = []
+        if redis_enabled:
+            cache_queue_items.append("Redis")
+        if celery_enabled:
+            cache_queue_items.append("Celery")
+        
+        lines.append(
+            f"[bold {colors.warning}]Cache & Queues:[/bold {colors.warning}] "
+            f"[dim]{', '.join(cache_queue_items)}[/dim]"
+        )
+
     # Security configuration
     security_items = ["Input Validation", "Password Hashing"]
     if features.get("cors"):

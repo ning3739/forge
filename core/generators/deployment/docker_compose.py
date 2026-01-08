@@ -28,9 +28,7 @@ class DockerComposeGenerator(BaseTemplateGenerator):
     
     def _build_version(self) -> str:
         """Build version declaration"""
-        return '''version: '3.8'
-
-'''
+        return ''
     
     def _build_services(self) -> str:
         """Build services configuration"""
@@ -49,10 +47,10 @@ class DockerComposeGenerator(BaseTemplateGenerator):
         # Add database connection environment variables
         db_type = self.config_reader.get_database_type()
         if db_type == "PostgreSQL":
-            content += '''      - DATABASE_URL=postgresql://postgres:postgres@db:5432/{project_name}
+            content += '''      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/{project_name}
 '''.format(project_name=self.config_reader.get_project_name())
         elif db_type == "MySQL":
-            content += '''      - DATABASE_URL=mysql://root:mysql@db:3306/{project_name}
+            content += '''      - DATABASE_URL=mysql+aiomysql://root:mysql@db:3306/{project_name}
 '''.format(project_name=self.config_reader.get_project_name())
         
         # Add Redis environment variables if enabled
@@ -162,10 +160,10 @@ class DockerComposeGenerator(BaseTemplateGenerator):
         # Add database connection
         db_type = self.config_reader.get_database_type()
         if db_type == "PostgreSQL":
-            env_vars += '''      - DATABASE_URL=postgresql://postgres:postgres@db:5432/{project_name}
+            env_vars += '''      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/{project_name}
 '''.format(project_name=project_name)
         elif db_type == "MySQL":
-            env_vars += '''      - DATABASE_URL=mysql://root:mysql@db:3306/{project_name}
+            env_vars += '''      - DATABASE_URL=mysql+aiomysql://root:mysql@db:3306/{project_name}
 '''.format(project_name=project_name)
         
         return '''  db-migrate:
@@ -213,10 +211,10 @@ class DockerComposeGenerator(BaseTemplateGenerator):
         # Add database connection
         db_type = self.config_reader.get_database_type()
         if db_type == "PostgreSQL":
-            env_vars += '''      - DATABASE_URL=postgresql://postgres:postgres@db:5432/{project_name}
+            env_vars += '''      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/{project_name}
 '''.format(project_name=project_name)
         elif db_type == "MySQL":
-            env_vars += '''      - DATABASE_URL=mysql://root:mysql@db:3306/{project_name}
+            env_vars += '''      - DATABASE_URL=mysql+aiomysql://root:mysql@db:3306/{project_name}
 '''.format(project_name=project_name)
         
         # Add Redis and Celery environment variables

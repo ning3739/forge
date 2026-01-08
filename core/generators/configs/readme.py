@@ -372,7 +372,68 @@ pytest --cov=app tests/
     def _build_docker_section(self) -> str:
         """Build Docker description"""
         project_name = self.config_reader.get_project_name()
-        return f'''### Docker
+        
+        # Check if project has multiple services (Redis, Celery, etc.)
+        has_multiple_services = (
+            self.config_reader.has_redis() or 
+            self.config_reader.has_celery() or 
+            self.config_reader.get_database_type() in ["MySQL", "PostgreSQL"]
+        )
+        
+        if has_multiple_services:
+            # Use Docker Compose for multi-service setup
+            content = f'''### Docker
+
+This project includes a complete Docker Compose setup with all required services.
+
+#### Production Deployment
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Run in background
+docker-compose up -d --build
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+#### Services Included
+
+- **FastAPI Application**: Main API server (port 8000)
+- **Database**: {self.config_reader.get_database_type()} database with health checks
+- **Database Migration**: Automatic schema migrations on startup'''
+            
+            if self.config_reader.has_redis():
+                content += '''
+- **Redis**: Caching and session storage (port 6379)'''
+            
+            if self.config_reader.has_celery():
+                content += '''
+- **Celery Worker**: Background task processing
+- **Celery Beat**: Scheduled task management'''
+            
+            content += '''
+
+#### Environment Configuration
+
+The Docker setup uses production environment variables from `./secret/.env.production`.
+Make sure to update database credentials and other sensitive settings before deployment.
+
+#### Development vs Production
+
+- **Development**: Use `uv run uvicorn app.main:app --reload` for local development
+- **Production**: Use `docker-compose up` for full containerized deployment
+
+'''
+            return content
+        else:
+            # Use simple Docker commands for single-service setup
+            return f'''### Docker
 
 ```bash
 # Build image

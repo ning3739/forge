@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.7] - 2026-01-08
+
+### Fixed
+
+- **Docker Configuration**: Fixed Docker Compose generator to use correct async database drivers (`mysql+aiomysql://`, `postgresql+asyncpg://`)
+- **Environment Configuration**: Fixed production environment files to use Docker service names (`db:3306`, `redis:6379`) instead of localhost
+- **Docker Compose**: Removed obsolete `version` field from docker-compose.yml generation
+- **README Documentation**: Fixed Docker deployment instructions to use `docker-compose up --build` for multi-service projects
+- **Configuration Summary**: Added Redis and Celery information to init command's Configuration Summary display
+
+### Improved
+
+- **Production Deployment**: Enhanced Docker Compose setup with proper service dependencies and health checks
+- **Environment Separation**: Clear distinction between development (localhost) and production (Docker service names) configurations
+- **Documentation**: Comprehensive Docker deployment guide with service descriptions and environment configuration instructions
+
 ## [0.1.6] - 2026-01-08
 
 ### Improved

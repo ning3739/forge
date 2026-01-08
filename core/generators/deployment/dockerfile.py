@@ -83,6 +83,9 @@ RUN pip install --no-cache-dir --upgrade pip && \\
         return '''# Copy application code
 COPY ./app ./app
 
+# Copy environment configuration
+COPY ./secret ./secret
+
 # Set Python path to include current directory
 ENV PYTHONPATH=/app
 
