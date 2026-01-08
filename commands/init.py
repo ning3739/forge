@@ -465,7 +465,6 @@ def show_next_steps(name: str, features: Dict[str, Any]) -> None:
         content += (
             f"\n\n[{colors.text_muted}]For background tasks (Celery):[/{colors.text_muted}]\n"
             f"[bold {colors.warning}]uv run celery -A app.core.celery.celery_app worker --loglevel=info[/bold {colors.warning}]  [{colors.text_muted}]# Start Celery worker[/{colors.text_muted}]\n"
-            f"[bold {colors.info}]uv run celery -A app.core.celery.celery_app beat --loglevel=info[/bold {colors.info}]  [{colors.text_muted}]# Start scheduler (separate terminal)[/{colors.text_muted}]\n"
             f"[bold {colors.secondary}]uv run celery -A app.core.celery.celery_app flower[/bold {colors.secondary}]  [{colors.text_muted}]# Start monitoring (optional)[/{colors.text_muted}]"
         )
     elif isinstance(celery_enabled, dict) and celery_enabled.get("enabled", False):
@@ -473,7 +472,6 @@ def show_next_steps(name: str, features: Dict[str, Any]) -> None:
         content += (
             f"\n\n[{colors.text_muted}]For background tasks (Celery):[/{colors.text_muted}]\n"
             f"[bold {colors.warning}]uv run celery -A app.core.celery.celery_app worker --loglevel=info[/bold {colors.warning}]  [{colors.text_muted}]# Start Celery worker[/{colors.text_muted}]\n"
-            f"[bold {colors.info}]uv run celery -A app.core.celery.celery_app beat --loglevel=info[/bold {colors.info}]  [{colors.text_muted}]# Start scheduler (separate terminal)[/{colors.text_muted}]\n"
             f"[bold {colors.secondary}]uv run celery -A app.core.celery.celery_app flower[/bold {colors.secondary}]  [{colors.text_muted}]# Start monitoring (optional)[/{colors.text_muted}]"
         )
 

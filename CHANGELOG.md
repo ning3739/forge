@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2026-01-08
+
+### Improved
+
+- **Documentation Consistency**: Unified README.md generator with Forge project documentation
+- **Feature Documentation**: Enhanced feature descriptions with proper emoji and formatting
+- **Technology Coverage**: Updated documentation to include Redis, Celery, and SQLite support
+- **Project Structure**: Added comprehensive project structure documentation including Redis/Celery files
+- **Installation Guide**: Improved installation and quick start sections with better formatting
+
+### Fixed
+
+- **Character Encoding**: Fixed emoji display issues in generated README files
+- **Feature Descriptions**: Corrected feature list formatting and descriptions
+- **Documentation Links**: Updated all documentation links to use proper Forge repository references
+
+### Technical Details
+
+- README generator now produces documentation consistent with Forge project README
+- Added comprehensive feature coverage including background tasks, caching, and database backup
+- Improved documentation structure with better organization and visual hierarchy
+- Fixed character encoding issues that caused malformed emoji in generated files
+
 ## [0.1.5] - 2026-01-08
 
 ### Fixed

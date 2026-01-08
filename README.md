@@ -23,7 +23,10 @@ Forge is a powerful command-line tool that helps you quickly bootstrap productio
 - 🎨 **Beautiful Interactive UI** - Stunning terminal interface with gradient colors and smooth animations
 - 🚀 **Smart Presets** - Carefully curated presets for testing, dev tools, deployment, and monitoring
 - 🔐 **Authentication Ready** - Built-in support for JWT authentication (Basic & Complete)
-- 🗄️ **Database Flexibility** - Support for PostgreSQL and MySQL with SQLModel/SQLAlchemy
+- 🗄️ **Database Flexibility** - Support for PostgreSQL, MySQL, and SQLite with SQLModel/SQLAlchemy
+- 🔴 **Redis Integration** - Built-in Redis support for caching, sessions, and message queues
+- 📋 **Background Tasks** - Celery integration with Redis broker for async task processing
+- 💾 **Database Backup** - Automated database backup tasks supporting all database types
 - 📦 **Modular Architecture** - Choose only the features you need
 - 🧪 **Testing Built-in** - Pre-configured pytest with async support and coverage
 - 🐳 **Docker Ready** - Production-ready Docker and Docker Compose configurations
@@ -145,6 +148,7 @@ This separation ensures:
 
 - **PostgreSQL** (Recommended) - Robust, feature-rich, excellent for production
 - **MySQL** - Popular, widely supported relational database
+- **SQLite** - Lightweight, serverless database perfect for development and small projects
 
 ### ORM Support
 
@@ -178,10 +182,17 @@ This separation ensures:
 
 All projects include:
 
-- **Logging** - Structured logging (automatically included)
+- **Logging** - Structured logging with Loguru (automatically included)
 - **API Documentation** - Swagger UI and ReDoc (automatically included)
 - **Health Check** - Basic health check endpoint (automatically included)
 - **Rate Limiting** - Decorator-based rate limiting for API protection (automatically included)
+
+### Background Tasks & Caching
+
+- **Redis** - In-memory data structure store for caching, sessions, and message queues
+- **Celery** - Distributed task queue for background job processing
+- **Database Backup** - Automated backup tasks supporting MySQL, PostgreSQL, and SQLite
+- **Task Scheduling** - Cron-based task scheduling with Celery Beat (production)
 
 ### Development Tools
 
@@ -237,11 +248,13 @@ my-awesome-api/
 │   │   ├── config/          # Configuration management
 │   │   │   ├── base.py      # Base configuration
 │   │   │   ├── settings.py  # Settings aggregator
-│   │   │   └── modules/     # Config modules (app, database, jwt, cors, email, logger)
+│   │   │   └── modules/     # Config modules (app, database, jwt, cors, email, logger, redis, celery)
 │   │   ├── database/        # Database connection
 │   │   │   ├── connection.py
 │   │   │   ├── dependencies.py
-│   │   │   └── postgresql.py / mysql.py
+│   │   │   └── postgresql.py / mysql.py / sqlite.py
+│   │   ├── redis.py         # Redis connection manager (if Redis enabled)
+│   │   ├── celery.py        # Celery configuration (if Celery enabled)
 │   │   ├── deps.py          # Global dependencies
 │   │   ├── logger.py        # Logging configuration
 │   │   └── security.py      # Security utilities (password hashing, JWT)
@@ -258,6 +271,9 @@ my-awesome-api/
 │   │   └── token.py         # (if refresh token enabled)
 │   ├── services/            # Business logic
 │   │   └── auth.py
+│   ├── tasks/               # Celery tasks (if Celery enabled)
+│   │   ├── __init__.py      # Task exports
+│   │   └── backup_database_task.py  # Database backup task
 │   ├── routers/             # API routes
 │   │   └── v1/              # API version 1
 │   │       ├── __init__.py  # Router aggregator
@@ -303,6 +319,8 @@ my-awesome-api/
 - **Database**: PostgreSQL with SQLModel
 - **Migration**: Alembic enabled
 - **Authentication**: Complete JWT Auth with Refresh Token
+- **Caching**: Redis enabled
+- **Background Tasks**: Celery with Redis broker
 - **Security**: CORS enabled
 - **Dev Tools**: Black + Ruff
 - **Testing**: pytest with coverage
@@ -313,6 +331,8 @@ my-awesome-api/
 - **PostgreSQL** for database (production-ready, feature-rich)
 - **SQLModel** for ORM (modern, type-safe, FastAPI-friendly)
 - **JWT** for authentication (stateless, scalable, API-friendly)
+- **Redis** for caching and message queues (fast, reliable)
+- **Celery** for background tasks (mature, scalable)
 - **Alembic** for migrations (industry standard)
 
 ## 🛠️ Commands
@@ -349,6 +369,7 @@ forge -v
 ```
 ✅ PostgreSQL + SQLModel
 ✅ Complete JWT Auth
+✅ Redis + Celery
 ✅ CORS enabled
 ✅ Black + Ruff
 ✅ pytest with coverage
@@ -358,7 +379,7 @@ forge -v
 ### For Simple Projects
 
 ```
-✅ PostgreSQL + SQLModel
+✅ SQLite + SQLModel
 ✅ Basic JWT Auth (or no auth)
 ✅ CORS enabled
 ✅ Docker deployment
