@@ -54,3 +54,6 @@ yarn-error.log
 
 # Typer/uv
 .uv/
+
+# kiro
+.kiro

@@ -93,15 +93,28 @@ def get_auth_config(auth_type: str) -> Dict[str, Any]:
 # Configuration Collection
 # ============================================================================
 
-def collect_project_name(name: Optional[str], style: questionary.Style) -> str:
-    """Collect project name"""
+def collect_project_name(name: Optional[str], style: questionary.Style) -> tuple[str, bool]:
+    """Collect project name
+    
+    If user inputs '.', use current directory name as project name.
+    
+    Returns:
+        (project_name, use_current_dir)
+    """
     if name:
-        return name
-    return questionary.text(
-        "Project name:",
+        if name == ".":
+            return Path.cwd().name, True
+        return name, False
+    
+    result = questionary.text(
+        "Project name (use '.' for current directory):",
         default="forge-project",
         style=style
     ).ask() or "forge-project"
+    
+    if result == ".":
+        return Path.cwd().name, True
+    return result, False
 
 
 def collect_database_config(style: questionary.Style) -> tuple[str, str, Optional[str]]:
@@ -182,8 +195,13 @@ def collect_features(style: questionary.Style) -> Dict[str, Any]:
 # Project Handling
 # ============================================================================
 
-def handle_existing_project(name: str, style: questionary.Style) -> bool:
+def handle_existing_project(name: str, style: questionary.Style, use_current_dir: bool = False) -> bool:
     """Handle existing project
+    
+    Args:
+        name: Project name
+        style: Questionary style
+        use_current_dir: Whether using current directory as project root
     
     Returns:
         True to continue, False to cancel
@@ -196,7 +214,11 @@ def handle_existing_project(name: str, style: questionary.Style) -> bool:
     
     # Load existing configuration
     user_cwd = Path.cwd()
-    project_path = user_cwd / name
+    if use_current_dir:
+        project_path = user_cwd
+    else:
+        project_path = user_cwd / name
+    
     existing_config = ProjectConfig.load(project_path)
     if existing_config:
         console.print(
@@ -220,12 +242,33 @@ def handle_existing_project(name: str, style: questionary.Style) -> bool:
         console.print(f"\n[{colors.info}]Operation cancelled.[/{colors.info}]")
         raise typer.Exit(code=0)
     elif "Overwrite" in action:
-        # Remove existing project directory
         import shutil
-        project_path = Path.cwd() / name
         try:
-            console.print(f"\n[{colors.warning}]Removing existing project...[/{colors.warning}]")
-            shutil.rmtree(project_path)
+            console.print(f"\n[{colors.warning}]Removing existing project files...[/{colors.warning}]")
+            
+            if use_current_dir:
+                # For current directory, only remove .forge config and generated app folder
+                forge_dir = project_path / ".forge"
+                app_dir = project_path / "app"
+                if forge_dir.exists():
+                    shutil.rmtree(forge_dir)
+                if app_dir.exists():
+                    shutil.rmtree(app_dir)
+                # Also remove other common generated files/folders
+                for item in ["alembic", "tests", "static", "secret", "script", 
+                             "pyproject.toml", "alembic.ini", "README.md", 
+                             "Dockerfile", "docker-compose.yml", ".dockerignore", 
+                             ".gitignore", "LICENSE", "uv.lock"]:
+                    item_path = project_path / item
+                    if item_path.exists():
+                        if item_path.is_dir():
+                            shutil.rmtree(item_path)
+                        else:
+                            item_path.unlink()
+            else:
+                # For subdirectory, remove the entire directory
+                shutil.rmtree(project_path)
+            
             console.print(f"[{colors.success}]✅ Existing project removed.[/{colors.success}]")
         except Exception as e:
             console.print(f"\n[bold red]Error removing existing project:[/bold red] {str(e)}")
@@ -458,19 +501,33 @@ def show_email_config_warning() -> None:
     console.print(warning_panel)
 
 
-def show_next_steps(name: str, features: Dict[str, Any]) -> None:
-    """Show next steps"""
+def show_next_steps(name: str, features: Dict[str, Any], use_current_dir: bool = False) -> None:
+    """Show next steps
+    
+    Args:
+        name: Project name
+        features: Project features configuration
+        use_current_dir: Whether project was created in current directory
+    """
     colors = get_colors()
     console.print()
+
+    # Determine project location and cd command
+    if use_current_dir:
+        project_location = Path.cwd()
+        cd_line = ""  # No cd needed
+    else:
+        project_location = Path.cwd() / name
+        cd_line = f"[bold {colors.primary}]cd {name}[/bold {colors.primary}]\n"
 
     content = (
         f"[bold {colors.neon_green}]:white_check_mark:[/bold {colors.neon_green}]  "
         f"[bold {colors.text_primary}]Project created successfully!"
         f"[/bold {colors.text_primary}]\n\n"
         f"[{colors.text_muted}]Project location:[/{colors.text_muted}]\n"
-        f"[bold {colors.secondary}]{Path.cwd() / name}[/bold {colors.secondary}]\n\n"
+        f"[bold {colors.secondary}]{project_location}[/bold {colors.secondary}]\n\n"
         f"[{colors.text_muted}]Next steps:[/{colors.text_muted}]\n"
-        f"[bold {colors.primary}]cd {name}[/bold {colors.primary}]\n"
+        f"{cd_line}"
         f"[bold {colors.secondary}]uv sync[/bold {colors.secondary}]  [{colors.text_muted}]# Install dependencies[/{colors.text_muted}]\n"
         f"[bold {colors.neon_green}]uv run uvicorn app.main:app --reload[/bold {colors.neon_green}]  [{colors.text_muted}]# Start server[/{colors.text_muted}]"
     )
@@ -516,20 +573,26 @@ def execute_init(name: Optional[str] = None, interactive: bool = True) -> Dict[s
 
     if interactive:
         # Interactive mode
-        name = collect_project_name(name, style)
+        name, use_current_dir = collect_project_name(name, style)
         
         # Check if project already exists
         user_cwd = Path.cwd()
-        project_path = user_cwd / name
+        if use_current_dir:
+            project_path = user_cwd
+        else:
+            project_path = user_cwd / name
         
         if ProjectConfig.exists(project_path):
-            handle_existing_project(name, style)
+            handle_existing_project(name, style, use_current_dir=use_current_dir)
         
         database, orm, migration_tool = collect_database_config(style)
         features = collect_features(style)
     else:
         # Non-interactive mode uses defaults
         name = name or "my-fastapi-project"
+        use_current_dir = (name == ".")
+        if name == ".":
+            name = Path.cwd().name
         database = DEFAULT_NON_INTERACTIVE_CONFIG["database"]
         orm = DEFAULT_NON_INTERACTIVE_CONFIG["orm"]
         migration_tool = DEFAULT_NON_INTERACTIVE_CONFIG["migration_tool"]
@@ -542,14 +605,18 @@ def execute_init(name: Optional[str] = None, interactive: bool = True) -> Dict[s
     # Show saving progress
     show_saving_progress(name)
 
-    # generate project
-    project_path = user_cwd / name
-    project_path.mkdir(parents=True, exist_ok=True)
+    # Determine project path - use current directory if requested
+    if use_current_dir:
+        project_path = user_cwd  # Use current directory directly
+    else:
+        project_path = user_cwd / name
+        project_path.mkdir(parents=True, exist_ok=True)
+    
     generate_project(project_path, project_config)
 
     # Show configuration summary and next steps
     show_config_summary(name, database, orm, migration_tool, features)
-    show_next_steps(name, features)
+    show_next_steps(name, features, use_current_dir=use_current_dir)
 
     return {
         "project_name": name,

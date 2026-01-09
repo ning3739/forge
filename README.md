@@ -436,6 +436,12 @@ Forge/
 │   ├── colors.py         # Color management system
 │   ├── components.py     # UI components
 │   └── logo.py           # Logo rendering
+├── tests/                # Unit tests (62 tests, 81% coverage)
+│   ├── test_init.py      # Command initialization tests
+│   ├── test_project_generation.py  # Project generation tests
+│   ├── test_edge_cases.py  # Edge cases and error handling
+│   ├── test_decorators.py  # Decorator system tests
+│   └── test_version.py   # Version consistency tests
 ├── main.py               # CLI entry point
 ├── pyproject.toml        # Project configuration
 └── README.md             # This file
@@ -447,6 +453,7 @@ Forge/
 - **`orchestrator.py`** - Discovers and executes generators in correct order
 - **40+ Generators** - Each responsible for specific files/features
 - **Configuration-First** - All decisions driven by `.forge/config.json`
+- **Comprehensive Tests** - 62 unit tests ensuring reliability
 
 ## 🤝 Contributing
 

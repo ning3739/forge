@@ -51,7 +51,7 @@ async def test_get_current_user(client: AsyncClient, auth_headers):
 @pytest.mark.asyncio
 async def test_update_current_user(client: AsyncClient, auth_headers):
     """Test update current user"""
-    response = await client.patch(
+    response = await client.put(
         "/api/v1/users/me",
         headers=auth_headers,
         json={"username": "updateduser"}

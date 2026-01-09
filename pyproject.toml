@@ -1,6 +1,6 @@
 [project]
 name = "ningfastforge"
-version = "0.1.7.1"
+version = "0.1.8"
 description = "A modern FastAPI project scaffolding CLI tool"
 readme = "PYPI.md"
 requires-python = ">=3.9"
@@ -30,6 +30,12 @@ dependencies = [
     "rich>=14.0.0",
     "questionary>=1.10.0",
     "packaging>=21.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
 ]
 
 [project.urls]

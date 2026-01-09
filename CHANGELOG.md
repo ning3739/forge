@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8] - 2026-01-10
+
+### Added
+
+- **Current Directory Support**: Use `.` as project name to generate project in current directory (`forge init .`)
+- **Comprehensive Test Suite**: Added complete test infrastructure for both Forge CLI and generated projects
+  - **Forge CLI Tests**: 62 tests covering core functionality (81% code coverage)
+  - **Generated Project Tests**: 12 tests for authentication, user management, and API endpoints
+  - All tests pass out-of-the-box without manual configuration
+
+### Fixed
+
+- **Test Fixtures**: Fixed user authentication fixtures in generated projects
+  - Split into `test_user_verified` (for login tests) and `test_user_unverified` (for email verification tests)
+  - Fixed `auth_headers` to use `security_manager.create_access_token()` with correct payload
+  - Added backward compatibility alias `test_user = test_user_verified`
+
+- **Test Configuration**: Fixed multiple test setup issues
+  - Changed to file-based SQLite (`sqlite+aiosqlite:///./test.db`) for reliable async testing
+  - Fixed metadata import to use `SQLModel.metadata` instead of `Base.metadata`
+  - Fixed `AsyncClient` initialization to use `ASGITransport` (httpx 0.24+ compatibility)
+  - Added proper database dependency override and test isolation
+
+- **Test Methods & Endpoints**: Corrected HTTP methods and paths
+  - Changed `test_update_current_user` from PATCH to PUT
+  - Fixed endpoint paths: `/forgot-password`, `/resend-verification`
+  - Updated login tests to use JSON payload instead of form data
+
+- **Template Syntax**: Fixed f-string escaping issues in test generators
+
+### Improved
+
+- **Test Documentation**: Enhanced README with clear installation and usage instructions
+  - Added `uv sync --extra dev` command for installing test dependencies
+  - Included examples for coverage and specific test file execution
+  
+- **Project Overwrite Logic**: Enhanced handling of existing projects when using current directory
+- **Next Steps Display**: Improved instructions when generating in current directory
+
 ## [0.1.7.1] - 2026-01-09
 
 ### Improved

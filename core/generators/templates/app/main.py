@@ -386,8 +386,8 @@ if os.path.exists(static_dir):
 
 
 # Include routers
-app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
-app.include_router(user_router, prefix="/api/v1/users", tags=["Users"])'''
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(user_router, prefix="/api/v1")'''
         
         app_content += '''
 

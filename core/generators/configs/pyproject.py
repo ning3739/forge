@@ -179,6 +179,7 @@ packages = ["app"]
                 'pytest>=7.4.0',
                 'pytest-asyncio>=0.21.0',
                 'httpx>=0.25.0',
+                'aiosqlite>=0.19.0',  # SQLite for testing
             ])
         
         if self.config_reader.has_dev_tools():

@@ -59,12 +59,12 @@ async def test_register(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_register_duplicate_email(client: AsyncClient, test_user):
+async def test_register_duplicate_email(client: AsyncClient, test_user_verified):
     """Test registration with duplicate email"""
     response = await client.post(
         "/api/v1/auth/register",
         json={
-            "email": test_user.email,
+            "email": test_user_verified.email,
             "username": "anotheruser",
             "password": "password123"
         }
@@ -73,12 +73,12 @@ async def test_register_duplicate_email(client: AsyncClient, test_user):
 
 
 @pytest.mark.asyncio
-async def test_login(client: AsyncClient, test_user):
+async def test_login(client: AsyncClient, test_user_verified):
     """Test user login"""
     response = await client.post(
         "/api/v1/auth/login",
         data={
-            "username": test_user.email,
+            "username": test_user_verified.email,
             "password": "testpassword"
         }
     )
@@ -141,12 +141,12 @@ async def test_register(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_login(client: AsyncClient, test_user):
+async def test_login(client: AsyncClient, test_user_verified):
     """Test user login"""
     response = await client.post(
         "/api/v1/auth/login",
-        data={
-            "username": test_user.email,
+        json={
+            "email": test_user_verified.email,
             "password": "testpassword"
         }
     )
@@ -158,13 +158,13 @@ async def test_login(client: AsyncClient, test_user):
 
 
 @pytest.mark.asyncio
-async def test_refresh_token(client: AsyncClient, test_user):
+async def test_refresh_token(client: AsyncClient, test_user_verified):
     """Test token refresh"""
     # First login to get refresh token
     login_response = await client.post(
         "/api/v1/auth/login",
-        data={
-            "username": test_user.email,
+        json={
+            "email": test_user_verified.email,
             "password": "testpassword"
         }
     )
@@ -181,21 +181,21 @@ async def test_refresh_token(client: AsyncClient, test_user):
 
 
 @pytest.mark.asyncio
-async def test_request_password_reset(client: AsyncClient, test_user):
+async def test_request_password_reset(client: AsyncClient, test_user_unverified):
     """Test password reset request"""
     response = await client.post(
-        "/api/v1/auth/password-reset/request",
-        json={"email": test_user.email}
+        "/api/v1/auth/forgot-password",
+        json={"email": test_user_unverified.email}
     )
     assert response.status_code == 200
 
 
 @pytest.mark.asyncio
-async def test_verify_email_request(client: AsyncClient, test_user):
+async def test_verify_email_request(client: AsyncClient, test_user_unverified):
     """Test email verification request"""
     response = await client.post(
-        "/api/v1/auth/verify-email/request",
-        json={"email": test_user.email}
+        "/api/v1/auth/resend-verification",
+        json={"email": test_user_unverified.email}
     )
     assert response.status_code == 200
 
