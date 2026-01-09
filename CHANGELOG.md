@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8.1] - 2026-01-10
+
+### Improved
+
+- **Version Update Prompt**: Simplified and optimized version update user experience
+  - Removed redundant "Skip for now" option
+  - Streamlined to two clear choices: "Yes, update automatically" or "No, continue with current version"
+  - Update command now displayed upfront before prompting user
+  - Choosing "No" continues execution without exiting the program
+  - Improved user flow and reduced decision fatigue
+
 ## [0.1.8] - 2026-01-10
 
 ### Added

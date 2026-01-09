@@ -121,14 +121,18 @@ def show_interactive_update_prompt(latest_version: str) -> None:
     console.print(f"[{colors.text_secondary}]Latest version:[/{colors.text_secondary}] [bold {colors.success}]{latest_version}[/bold {colors.success}]")
     console.print()
     
+    # Show update command first
+    console.print(f"[{colors.text_secondary}]To update manually, run:[/{colors.text_secondary}]")
+    console.print(f"[bold {colors.primary}]pip install --upgrade ningfastforge[/bold {colors.primary}]")
+    console.print()
+    
     try:
         # Ask user if they want to update now
         choice = questionary.select(
             "Would you like to update now?",
             choices=[
                 "✅ Yes, update automatically",
-                "📋 No, show me the command",
-                "⏭️  Skip for now"
+                "⏭️  No, continue with current version"
             ],
             style=questionary.Style([
                 ('question', 'bold'),
@@ -144,14 +148,11 @@ def show_interactive_update_prompt(latest_version: str) -> None:
             if success:
                 console.print("[bold green]🎉 Update completed! Please restart your command.[/bold green]")
                 sys.exit(0)
-        elif choice == "📋 No, show me the command":
-            show_update_notification(latest_version)
-        # For "Skip for now", just continue
+        # For "No, continue", just continue without doing anything
         
     except (KeyboardInterrupt, EOFError):
-        # User pressed Ctrl+C or similar, just show the manual command
+        # User pressed Ctrl+C, just continue
         console.print()
-        show_update_notification(latest_version)
 
 
 def show_update_notification(latest_version: str) -> None:
