@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.7.1] - 2026-01-09
+
+### Improved
+
+- **Documentation**: Optimized README.md structure and accuracy
+
 ## [0.1.7] - 2026-01-08
 
 ### Fixed

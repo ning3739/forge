@@ -1,12 +1,15 @@
 [project]
 name = "ningfastforge"
-version = "0.1.7"
+version = "0.1.7.1"
 description = "A modern FastAPI project scaffolding CLI tool"
-readme = "README.md"
+readme = "PYPI.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
-    {name = "ning", email = "ln729500172@gmail.com"}
+    {name = "ning3739", email = "ln729500172@gmail.com"}
+]
+maintainers = [
+  { name = "ning3739", email = "ln729500172@gmail.com" }
 ]
 keywords = ["fastapi", "cli", "scaffolding", "generator", "template"]
 classifiers = [

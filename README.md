@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/logo.png" alt="Forge Logo" width="480"/>
+  <img src="https://github.com/ning3739/forge/blob/main/assets/logo.svg?raw=true" alt="Forge Logo" width="480"/>
 </div>
 
 <br/>
@@ -87,16 +87,16 @@ forge --version
 forge init
 
 # Or specify project name
-forge init my-awesome-api
+forge init forge-project
 
 # Non-interactive mode with defaults
-forge init my-api --no-interactive
+forge init forge-project --no-interactive
 ```
 
 ### Run Your Project
 
 ```bash
-cd my-awesome-api
+cd forge-project
 uv sync
 uv run uvicorn app.main:app --reload
 # Visit:
@@ -240,56 +240,79 @@ pytest -v
 ## 📁 Generated Project Structure
 
 ```
-my-awesome-api/
+forge-project/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py              # FastAPI application entry point
 │   ├── core/
+│   │   ├── __init__.py
 │   │   ├── config/          # Configuration management
+│   │   │   ├── __init__.py
 │   │   │   ├── base.py      # Base configuration
 │   │   │   ├── settings.py  # Settings aggregator
 │   │   │   └── modules/     # Config modules (app, database, jwt, cors, email, logger, redis, celery)
+│   │   │       ├── __init__.py
+│   │   │       ├── app.py
+│   │   │       ├── celery.py
+│   │   │       ├── cors.py
+│   │   │       ├── database.py
+│   │   │       ├── email.py
+│   │   │       ├── jwt.py
+│   │   │       ├── logger.py
+│   │   │       └── redis.py
 │   │   ├── database/        # Database connection
+│   │   │   ├── __init__.py
 │   │   │   ├── connection.py
 │   │   │   ├── dependencies.py
-│   │   │   └── postgresql.py / mysql.py / sqlite.py
+│   │   │   └── mysql.py     # Database-specific connection (mysql/postgresql/sqlite)
 │   │   ├── redis.py         # Redis connection manager (if Redis enabled)
 │   │   ├── celery.py        # Celery configuration (if Celery enabled)
 │   │   ├── deps.py          # Global dependencies
 │   │   ├── logger.py        # Logging configuration
 │   │   └── security.py      # Security utilities (password hashing, JWT)
 │   ├── decorators/          # Custom decorators
+│   │   ├── __init__.py
 │   │   └── rate_limit.py    # Rate limiting decorator
 │   ├── models/              # Database models
+│   │   ├── __init__.py
 │   │   ├── user.py
 │   │   └── token.py         # (if refresh token enabled)
 │   ├── schemas/             # Pydantic schemas
+│   │   ├── __init__.py
 │   │   ├── user.py
 │   │   └── token.py
 │   ├── crud/                # CRUD operations
+│   │   ├── __init__.py
 │   │   ├── user.py
 │   │   └── token.py         # (if refresh token enabled)
 │   ├── services/            # Business logic
+│   │   ├── __init__.py
 │   │   └── auth.py
 │   ├── tasks/               # Celery tasks (if Celery enabled)
 │   │   ├── __init__.py      # Task exports
 │   │   └── backup_database_task.py  # Database backup task
 │   ├── routers/             # API routes
+│   │   ├── __init__.py
 │   │   └── v1/              # API version 1
 │   │       ├── __init__.py  # Router aggregator
 │   │       ├── auth.py
 │   │       └── users.py
 │   └── utils/               # Utility functions
+│       ├── __init__.py
 │       └── email.py         # (if complete auth enabled)
 ├── tests/                   # Test files (if enabled)
+│   ├── __init__.py
 │   ├── conftest.py          # Pytest configuration and fixtures
 │   ├── test_main.py         # Main API endpoint tests
 │   ├── api/
+│   │   ├── __init__.py
 │   │   ├── test_auth.py     # Authentication tests
 │   │   └── test_users.py    # User endpoint tests
 │   └── unit/                # Unit tests directory
+│       └── __init__.py
 ├── alembic/                 # Database migrations (if enabled)
 │   ├── versions/            # Migration versions
+│   │   └── .gitkeep
 │   ├── env.py               # Alembic environment
 │   ├── script.py.mako       # Migration template
 │   └── README.md
@@ -299,16 +322,21 @@ my-awesome-api/
 │       ├── verification.html
 │       ├── password_reset.html
 │       └── welcome.html
+├── script/                  # Custom scripts directory
 ├── secret/                  # Environment files
 │   ├── .env.example         # Environment variables template
 │   ├── .env.development     # Development environment
 │   └── .env.production      # Production environment
+├── .forge/                  # Forge configuration
+│   └── config.json          # Project configuration
 ├── docker-compose.yml       # Docker Compose configuration (if enabled)
 ├── Dockerfile               # Docker configuration (if enabled)
 ├── .dockerignore            # Docker ignore file (if enabled)
 ├── .gitignore               # Git ignore file
+├── alembic.ini              # Alembic configuration (if migrations enabled)
 ├── pyproject.toml           # Project dependencies
 ├── uv.lock                  # UV lock file
+├── LICENSE                  # MIT license
 └── README.md                # Project documentation
 ```
 
@@ -346,10 +374,10 @@ Initialize a new FastAPI project with interactive prompts.
 forge init
 
 # Specify project name
-forge init my-project
+forge init forge-project
 
 # Non-interactive mode (uses defaults)
-forge init my-project --no-interactive
+forge init forge-project --no-interactive
 ```
 
 ### `forge --version`
@@ -438,32 +466,6 @@ uv sync
 ./scripts/test_build.sh
 ```
 
-## Publishing
-
-### Automated Release Process
-
-The project uses automated publishing via GitHub Actions:
-
-1. **Update version** in `pyproject.toml`
-2. **Update** `CHANGELOG.md` with changes
-3. **Commit and push**:
-   ```bash
-   git add pyproject.toml CHANGELOG.md
-   git commit -m "Bump version to 0.1.1"
-   git push
-   ```
-4. **Create and push tag**:
-   ```bash
-   git tag v0.1.1
-   git push origin v0.1.1
-   ```
-5. **Automatic process**:
-   - ✅ CI tests run on all Python versions
-   - ✅ Package is built and validated
-   - ✅ Published to PyPI automatically
-   - ✅ GitHub Release is created
-
-See [PUBLISHING.md](PUBLISHING.md) for detailed instructions.
 
 ## 📝 License
 
