@@ -80,16 +80,26 @@ RUN pip install --no-cache-dir --upgrade pip && \\
     
     def _build_app_copy(self) -> str:
         """Build application copy"""
-        return '''# Copy application code
+        content = '''# Copy application code
 COPY ./app ./app
 
 # Copy environment configuration
 COPY ./secret ./secret
 
-# Set Python path to include current directory
+'''
+        
+        # Copy static directory if complete auth is enabled (for email templates)
+        if self.config_reader.get_auth_type() == 'complete':
+            content += '''# Copy static files (email templates)
+COPY ./static ./static
+
+'''
+        
+        content += '''# Set Python path to include current directory
 ENV PYTHONPATH=/app
 
 '''
+        return content
     
     def _build_expose(self) -> str:
         """Build port exposure"""

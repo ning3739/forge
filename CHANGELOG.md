@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8.2] - 2026-01-10
+
+### Fixed
+
+- **Docker**: Fixed missing `static` directory in Dockerfile causing "Email template not found" error in production
+  - Dockerfile now copies `static/email_template` directory when complete authentication is enabled
+  - Resolves 404 error when sending verification emails in Docker containers
+
 ## [0.1.8.1] - 2026-01-10
 
 ### Improved
