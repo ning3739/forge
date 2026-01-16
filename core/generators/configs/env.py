@@ -299,6 +299,9 @@ JWT_AUDIENCE=demo_users
         secret_key = secrets.token_urlsafe(32)
         project_name = self.config_reader.get_project_name()
         
+        # Generate project identifier (for issuer and audience) - same logic as jwt.py
+        project_identifier = project_name.lower().replace('-', '_').replace(' ', '_')
+        
         content = f'''# ============================================
 # Authentication Configuration
 # ============================================
@@ -311,8 +314,8 @@ JWT_ACCESS_TOKEN_EXPIRATION=1800
             content += '''JWT_REFRESH_TOKEN_EXPIRATION=86400
 '''
         
-        content += f'''JWT_ISSUER={project_name}
-JWT_AUDIENCE={project_name}_users
+        content += f'''JWT_ISSUER={project_identifier}
+JWT_AUDIENCE={project_identifier}_users
 
 '''
         return content

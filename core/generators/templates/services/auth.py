@@ -32,10 +32,9 @@ class AuthServiceGenerator(BaseTemplateGenerator):
         imports = [
             "from datetime import datetime, timedelta",
             "from typing import Optional",
-            "from jose import JWTError, jwt",
             "from sqlalchemy.ext.asyncio import AsyncSession",
             "",
-            "from app.core.config import settings",
+            "from app.core.security import security_manager",
             "from app.crud.user import user_crud",
             "from app.models.user import User",
             "from app.schemas.user import UserCreate, Token",
@@ -50,25 +49,13 @@ class AuthServiceGenerator(BaseTemplateGenerator):
         
         Args:
             data: Data to encode
-            expires_delta: Expiration time delta
+            expires_delta: Expiration time delta (deprecated, use value from configuration)
             
         Returns:
             JWT token string
         """
-        to_encode = data.copy()
-        
-        if expires_delta:
-            expire = datetime.utcnow() + expires_delta
-        else:
-            expire = datetime.utcnow() + timedelta(seconds=settings.jwt.JWT_ACCESS_TOKEN_EXPIRATION)
-        
-        to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(
-            to_encode,
-            settings.jwt.JWT_SECRET_KEY.get_secret_value(),
-            algorithm=settings.jwt.JWT_ALGORITHM
-        )
-        return encoded_jwt
+        token, _ = security_manager.create_access_token(data)
+        return token
     
     @staticmethod
     async def register_user(db: AsyncSession, user_data: UserCreate) -> User:

@@ -65,11 +65,8 @@ pip install --upgrade ningfastforge
 git clone https://github.com/ning3739/forge.git
 cd forge
 
-# Install with uv (recommended)
+# Install with uv
 uv sync
-
-# Or with pip
-pip install -e .
 ```
 
 ### Verify Installation
@@ -129,6 +126,7 @@ class UserModelGenerator:
 ```
 
 **Benefits:**
+
 - ✅ Automatic generator discovery - no manual registration needed
 - ✅ Dependency resolution - generators execute in correct order
 - ✅ Conditional execution - only enabled generators run
@@ -472,7 +470,6 @@ uv sync
 # Test build
 ./scripts/test_build.sh
 ```
-
 
 ## 📝 License
 
