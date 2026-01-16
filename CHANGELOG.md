@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8.3] - 2026-01-16
+
+### Fixed
+
+- **Token Schema Generation**: Fixed incomplete token schema generation in base authentication mode
+  - Token schema now properly generated when using basic authentication option
+  - Ensures all required authentication schemas are created regardless of auth mode
+
 ## [0.1.8.2] - 2026-01-10
 
 ### Fixed
