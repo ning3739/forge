@@ -145,34 +145,34 @@ CELERY_RESULT_BACKEND=redis://localhost:6379/2
 
 If using PostgreSQL or MySQL, create the database:
 
-=== "PostgreSQL"
-    ```bash
-    # Login to PostgreSQL
-    psql -U postgres
-    
-    # Create database
-    CREATE DATABASE blog_api;
-    
-    # Create user (optional)
-    CREATE USER blog_user WITH PASSWORD 'your_password';
-    GRANT ALL PRIVILEGES ON DATABASE blog_api TO blog_user;
-    ```
+**PostgreSQL**:
+```bash
+# Login to PostgreSQL
+psql -U postgres
 
-=== "MySQL"
-    ```bash
-    # Login to MySQL
-    mysql -u root -p
-    
-    # Create database
-    CREATE DATABASE blog_api;
-    
-    # Create user (optional)
-    CREATE USER 'blog_user'@'localhost' IDENTIFIED BY 'your_password';
-    GRANT ALL PRIVILEGES ON blog_api.* TO 'blog_user'@'localhost';
-    ```
+# Create database
+CREATE DATABASE blog_api;
 
-=== "SQLite"
-    No setup needed - database file will be created automatically.
+# Create user (optional)
+CREATE USER blog_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE blog_api TO blog_user;
+```
+
+**MySQL**:
+```bash
+# Login to MySQL
+mysql -u root -p
+
+# Create database
+CREATE DATABASE blog_api;
+
+# Create user (optional)
+CREATE USER 'blog_user'@'localhost' IDENTIFIED BY 'your_password';
+GRANT ALL PRIVILEGES ON blog_api.* TO 'blog_user'@'localhost';
+```
+
+**SQLite**:
+No setup needed - database file will be created automatically.
 
 ### 4. Run Migrations
 

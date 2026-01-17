@@ -7,8 +7,143 @@ The Generator System is the heart of Forge's code generation capabilities. It us
 The generator system consists of three main components:
 
 1. **@Generator Decorator** - Automatic registration
-2. **Generator Classes** - Code generation logic
+2. **Generator Classes** - Code generation logic  
 3. **GeneratorOrchestrator** - Coordination and execution
+
+Forge includes **49 generators** organized into 13 categories that work together to create a complete FastAPI project. Each generator is automatically discovered, dependency-resolved, and executed in the correct order.
+
+## Complete Generator List
+
+Forge includes 49 generators organized into 13 categories. Here's the complete list with priorities and purposes:
+
+### Configuration Files (Priority 1-10)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| PyprojectGenerator | 1 | Generate pyproject.toml with dependencies | Always |
+| ReadmeGenerator | 2 | Generate README.md with project info | Always |
+| GitignoreGenerator | 3 | Generate .gitignore for Python projects | Always |
+| EnvGenerator | 4 | Generate .env files for different environments | Always |
+| LicenseGenerator | 4 | Generate LICENSE file | Always |
+| RedisConfigGenerator | 45 | Generate Redis configuration | `has_redis()` |
+| CeleryConfigGenerator | 46 | Generate Celery configuration | `has_celery()` |
+
+### App Configuration (Priority 10-20)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| ConfigBaseGenerator | 10 | Generate app/core/config/base.py | Always |
+| ConfigAppGenerator | 11 | Generate app/core/config/app.py | Always |
+| ConfigLoggerGenerator | 12 | Generate app/core/config/logger_config.py | Always |
+| LoggerManagerGenerator | 13 | Generate app/core/logger.py | Always |
+| ConfigCorsGenerator | 14 | Generate app/core/config/cors.py | `has_cors()` |
+| ConfigDatabaseGenerator | 15 | Generate app/core/config/database.py | Always |
+| ConfigJwtGenerator | 16 | Generate app/core/config/jwt.py | `has_auth()` |
+| ConfigEmailGenerator | 17 | Generate app/core/config/email.py | `get_auth_type() == 'complete'` |
+| ConfigSettingsGenerator | 18 | Generate app/core/config/settings.py | Always |
+| SecurityGenerator | 19 | Generate app/core/security.py | `has_auth()` |
+| CoreDepsGenerator | 20 | Generate app/core/deps.py | `has_auth()` |
+
+### Database (Priority 30-32)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| DatabaseConnectionGenerator | 30 | Generate database connection manager | Always |
+| DatabasePostgreSQLGenerator | 31 | Generate PostgreSQL-specific code | `get_database_type() == 'PostgreSQL'` |
+| DatabaseMySQLGenerator | 31 | Generate MySQL-specific code | `get_database_type() == 'MySQL'` |
+| SQLiteGenerator | 31 | Generate SQLite-specific code | `get_database_type() == 'SQLite'` |
+| DatabaseDependenciesGenerator | 32 | Generate database dependencies | Always |
+
+### Models (Priority 40-41)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| UserModelGenerator | 40 | Generate User model | `has_auth()` |
+| TokenModelGenerator | 41 | Generate RefreshToken and VerificationCode models | `get_auth_type() == 'complete'` |
+
+### App Core (Priority 47-48)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| CeleryAppGenerator | 47 | Generate Celery app instance | `has_celery()` |
+| RedisAppGenerator | 48 | Generate Redis connection manager | `has_redis()` |
+
+### Schemas (Priority 50-51)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| UserSchemaGenerator | 50 | Generate User Pydantic schemas | `has_auth()` |
+| TokenSchemaGenerator | 51 | Generate Token Pydantic schemas | `get_auth_type() == 'complete'` |
+
+### Tasks (Priority 59-60)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| TasksInitGenerator | 59 | Generate app/tasks/__init__.py | `has_celery()` |
+| BackupDatabaseTaskGenerator | 60 | Generate database backup task | `has_celery()` |
+
+### CRUD (Priority 60-61)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| UserCRUDGenerator | 60 | Generate User CRUD operations | `has_auth()` |
+| TokenCRUDGenerator | 61 | Generate Token CRUD operations | `get_auth_type() == 'complete'` |
+
+### Services (Priority 70)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| AuthServiceGenerator | 70 | Generate authentication service | `has_auth()` |
+
+### Email (Priority 75-76)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| EmailServiceGenerator | 75 | Generate email service | `get_auth_type() == 'complete'` |
+| EmailTemplateGenerator | 76 | Generate email HTML templates | `get_auth_type() == 'complete'` |
+
+### Routers (Priority 80-82)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| AuthRouterGenerator | 80 | Generate authentication router | `has_auth()` |
+| UserRouterGenerator | 81 | Generate user management router | `has_auth()` |
+| RouterAggregatorGenerator | 82 | Generate router aggregator | Always |
+
+### Decorators (Priority 85)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| RateLimitDecoratorGenerator | 85 | Generate rate limiting decorator | `has_redis()` |
+
+### Main App (Priority 90)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| MainGenerator | 90 | Generate main.py FastAPI app | Always |
+
+### Deployment (Priority 100-102)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| DockerfileGenerator | 100 | Generate Dockerfile | `has_docker()` |
+| DockerComposeGenerator | 101 | Generate docker-compose.yml | `has_docker()` |
+| DockerignoreGenerator | 102 | Generate .dockerignore | `has_docker()` |
+
+### Tests (Priority 110-113)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| ConftestGenerator | 110 | Generate pytest configuration | `has_testing()` |
+| TestMainGenerator | 111 | Generate main app tests | `has_testing()` |
+| TestAuthGenerator | 112 | Generate authentication tests | `has_testing() and has_auth()` |
+| TestUsersGenerator | 113 | Generate user management tests | `has_testing() and has_auth()` |
+
+### Migration (Priority 120)
+
+| Generator | Priority | Purpose | Enabled When |
+|-----------|----------|---------|--------------|
+| AlembicGenerator | 120 | Generate Alembic migration setup | `has_migration()` |
 
 ## The @Generator Decorator
 
@@ -192,12 +327,24 @@ class Post(SQLModel, table=True):
 
 ## Generator Orchestrator
 
-The `GeneratorOrchestrator` manages the generator lifecycle:
+The `GeneratorOrchestrator` manages the generator lifecycle through automatic discovery and intelligent execution.
 
-### Initialization
+### Automatic Discovery
+
+The orchestrator automatically discovers all generators without manual registration:
+
+1. **Import Phase**: All generator modules are imported, triggering `@Generator` decorator execution
+2. **Registration**: Each decorator automatically adds the generator to the global `GENERATORS` registry
+3. **No Manual Registration**: Developers never need to manually register generators
 
 ```python
-orchestrator = GeneratorOrchestrator(project_path, config_reader)
+# In orchestrator._import_all_generators()
+from core.generators.configs.pyproject import PyprojectGenerator
+from core.generators.templates.models.user import UserModelGenerator
+# ... 47 more imports
+
+# Each import triggers @Generator decorator, which registers the generator
+# No manual registration needed!
 ```
 
 ### Discovery Phase

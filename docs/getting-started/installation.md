@@ -17,11 +17,10 @@ The easiest way to install Forge is from PyPI using pip:
 pip install ningfastforge
 ```
 
-!!! tip "Using uv"
-    For faster installation, you can use [uv](https://docs.astral.sh/uv/):
-    ```bash
-    uv pip install ningfastforge
-    ```
+**Tip**: For faster installation, you can use [uv](https://docs.astral.sh/uv/):
+```bash
+uv pip install ningfastforge
+```
 
 ### Upgrade to Latest Version
 
@@ -67,32 +66,32 @@ Depending on what features you enable in your generated project, you may need ad
 
 ### Database Drivers
 
-=== "PostgreSQL"
-    ```bash
-    # macOS
-    brew install postgresql
-    
-    # Ubuntu/Debian
-    sudo apt-get install postgresql postgresql-contrib
-    
-    # Python driver (automatically installed)
-    pip install psycopg2-binary
-    ```
+**PostgreSQL**:
+```bash
+# macOS
+brew install postgresql
 
-=== "MySQL"
-    ```bash
-    # macOS
-    brew install mysql
-    
-    # Ubuntu/Debian
-    sudo apt-get install mysql-server
-    
-    # Python driver (automatically installed)
-    pip install pymysql
-    ```
+# Ubuntu/Debian
+sudo apt-get install postgresql postgresql-contrib
 
-=== "SQLite"
-    SQLite is included with Python, no additional installation needed.
+# Python driver (automatically installed)
+pip install psycopg2-binary
+```
+
+**MySQL**:
+```bash
+# macOS
+brew install mysql
+
+# Ubuntu/Debian
+sudo apt-get install mysql-server
+
+# Python driver (automatically installed)
+pip install pymysql
+```
+
+**SQLite**:
+SQLite is included with Python, no additional installation needed.
 
 ### Redis
 

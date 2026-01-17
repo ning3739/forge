@@ -1,112 +1,119 @@
 # Testing Guide
 
-Forge generates a comprehensive pytest test suite for your FastAPI application. This guide covers running tests, writing new tests, and best practices.
+Testing ensures your API works correctly and continues working as you make changes. Forge generates a complete pytest test suite that verifies your authentication, user management, and core functionality.
 
-## Test Suite Overview
+## Why Test
 
-When you enable tests (`include_tests: true`), Forge generates:
+Without tests, every code change is risky. You might break login, registration, or other critical features without realizing it until users complain. With tests, you get immediate feedback—if something breaks, the tests fail and show you exactly what went wrong.
+
+Tests also serve as documentation, showing how your API endpoints work and what they expect.
+
+## Generated Test Suite
+
+Forge creates a working test suite:
 
 ```
 tests/
-├── __init__.py
-├── conftest.py              # Test configuration and fixtures
-├── test_main.py             # Main API tests (health check, docs)
+├── conftest.py              # Shared fixtures and configuration
+├── test_main.py             # Core API tests
 └── api/
-    ├── __init__.py
     ├── test_auth.py         # Authentication tests
     └── test_users.py        # User management tests
 ```
 
+**conftest.py**: Contains reusable test components (database, client, auth fixtures)
+**test_main.py**: Tests health checks and documentation endpoints
+**test_auth.py**: Tests registration, login, token refresh, email verification
+**test_users.py**: Tests user profile endpoints and authorization
+
 ## Running Tests
 
-### Install Test Dependencies
+Install test dependencies:
 
 ```bash
-# Using uv (recommended)
 uv sync --extra dev
-
-# Using pip
-pip install -e ".[dev]"
+# or: pip install -e ".[dev]"
 ```
 
-### Run All Tests
+Run all tests:
 
 ```bash
-# Run all tests
 pytest
-
-# Run with verbose output
-pytest -v
-
-# Run with coverage
-pytest --cov=app --cov-report=html
-
-# Run specific test file
-pytest tests/test_main.py
-
-# Run specific test
-pytest tests/api/test_auth.py::test_register_user
 ```
 
-### Watch Mode
+Output:
+```
+tests/test_main.py ✓✓
+tests/api/test_auth.py ✓✓✓✓
+tests/api/test_users.py ✓✓✓
+
+========== 9 passed in 2.34s ==========
+```
+
+Run with details:
 
 ```bash
-# Install pytest-watch
-pip install pytest-watch
-
-# Run tests on file changes
-ptw
+pytest -v  # Show test names
+pytest tests/api/test_auth.py  # Run specific file
+pytest tests/api/test_auth.py::test_register_user  # Run specific test
 ```
+
+Check code coverage:
+
+```bash
+pytest --cov=app --cov-report=html
+open htmlcov/index.html
+```
+
+Aim for 80%+ coverage. Green lines are tested, red lines are not.
 
 ## Test Configuration
 
-### conftest.py
+The `conftest.py` file sets up everything tests need.
 
-The `conftest.py` file contains shared fixtures:
+### Test Database
+
+Tests use a temporary SQLite database:
 
 ```python
-import pytest
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-from sqlmodel import SQLModel
-
-from app.main import app
-from app.core.deps import get_db
-
-# Test database URL
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 
 @pytest.fixture(scope="session")
 async def engine():
-    """Create test database engine"""
-    engine = create_async_engine(
-        TEST_DATABASE_URL,
-        echo=False,
-        connect_args={"check_same_thread": False}
-    )
-    
+    """Create test database"""
+    engine = create_async_engine(TEST_DATABASE_URL)
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
-    
     yield engine
-    
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
-    
-    await engine.dispose()
+```
 
+**Why SQLite?** It's fast and doesn't require a running database server. Your code works with both SQLite and PostgreSQL/MySQL thanks to SQLAlchemy.
+
+**`scope="session"`**: Database is created once, used by all tests, then cleaned up.
+
+### Test Sessions
+
+Each test gets its own database session that rolls back after the test:
+
+```python
 @pytest.fixture
 async def db_session(engine):
-    """Create test database session"""
-    async_session = sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False
-    )
-    
+    """Create test session"""
+    async_session = sessionmaker(engine, class_=AsyncSession)
     async with async_session() as session:
         yield session
         await session.rollback()
+```
 
+The rollback ensures tests don't affect each other.
+
+### Test Client
+
+The test client makes HTTP requests to your API:
+
+```python
 @pytest.fixture
 async def client(db_session):
     """Create test client"""
@@ -115,51 +122,34 @@ async def client(db_session):
     
     app.dependency_overrides[get_db] = override_get_db
     
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app)) as ac:
         yield ac
-    
-    app.dependency_overrides.clear()
 ```
 
-## Generated Tests
+**Dependency override**: Your API uses the test database instead of the real one.
+**AsyncClient**: Makes requests without starting a web server—fast and no network needed.
 
-### Main API Tests
+## Example Tests
 
-**test_main.py**:
+### Health Check
+
 ```python
-import pytest
-from httpx import AsyncClient
-
 @pytest.mark.asyncio
 async def test_health_check(client: AsyncClient):
-    """Test health check endpoint"""
     response = await client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "healthy"}
-
-@pytest.mark.asyncio
-async def test_docs_available(client: AsyncClient):
-    """Test API documentation is available"""
-    response = await client.get("/docs")
-    assert response.status_code == 200
-    
-    response = await client.get("/redoc")
-    assert response.status_code == 200
 ```
 
-### Authentication Tests
+**`@pytest.mark.asyncio`**: Marks this as an async test
+**`client`**: Test client fixture from conftest.py
+**`assert`**: Verifies the response is correct
 
-**test_auth.py** (Basic and Complete modes):
+### User Registration
+
 ```python
-import pytest
-from httpx import AsyncClient
-
 @pytest.mark.asyncio
 async def test_register_user(client: AsyncClient):
-    """Test user registration"""
     response = await client.post(
         "/api/v1/auth/register",
         json={
@@ -171,74 +161,25 @@ async def test_register_user(client: AsyncClient):
     assert response.status_code == 201
     data = response.json()
     assert data["email"] == "test@example.com"
-    assert data["username"] == "testuser"
     assert "id" in data
-
-@pytest.mark.asyncio
-async def test_login_user(client: AsyncClient, test_user_verified):
-    """Test user login"""
-    response = await client.post(
-        "/api/v1/auth/login",
-        json={
-            "username": "testuser",
-            "password": "TestPass123!"
-        }
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
-
-@pytest.mark.asyncio
-async def test_login_invalid_credentials(client: AsyncClient):
-    """Test login with invalid credentials"""
-    response = await client.post(
-        "/api/v1/auth/login",
-        json={
-            "username": "nonexistent",
-            "password": "wrongpass"
-        }
-    )
-    assert response.status_code == 401
 ```
 
-### User Management Tests
+**Status 201**: "Created" - more specific than 200
+**Check response data**: Verify email matches, ID exists
+**No password check**: Passwords should never be in responses
 
-**test_users.py**:
+### Protected Endpoint
+
 ```python
-import pytest
-from httpx import AsyncClient
-
 @pytest.mark.asyncio
 async def test_get_current_user(client: AsyncClient, auth_headers):
-    """Test getting current user"""
-    response = await client.get(
-        "/api/v1/users/me",
-        headers=auth_headers
-    )
+    response = await client.get("/api/v1/users/me", headers=auth_headers)
     assert response.status_code == 200
-    data = response.json()
-    assert data["username"] == "testuser"
-    assert data["email"] == "test@example.com"
-
-@pytest.mark.asyncio
-async def test_update_current_user(client: AsyncClient, auth_headers):
-    """Test updating current user"""
-    response = await client.put(
-        "/api/v1/users/me",
-        headers=auth_headers,
-        json={"email": "newemail@example.com"}
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["email"] == "newemail@example.com"
-
-@pytest.mark.asyncio
-async def test_get_user_unauthorized(client: AsyncClient):
-    """Test accessing protected endpoint without auth"""
-    response = await client.get("/api/v1/users/me")
-    assert response.status_code == 401
+    assert response.json()["username"] == "testuser"
 ```
+
+**`auth_headers`**: Fixture providing authentication token
+**Tests authorization**: Verifies endpoint requires authentication
 
 ## Writing Custom Tests
 

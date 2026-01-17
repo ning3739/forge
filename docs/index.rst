@@ -101,8 +101,11 @@ Table of Contents
    user-guide/configuration
    user-guide/database
    user-guide/authentication
+   user-guide/redis-caching
+   user-guide/celery-tasks
    user-guide/testing
    user-guide/deployment
+   user-guide/best-practices
 
 .. toctree::
    :maxdepth: 2

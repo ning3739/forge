@@ -1,10 +1,10 @@
 # Database Setup
 
-Forge supports three database systems: PostgreSQL, MySQL, and SQLite. This guide covers setup, configuration, and best practices for each.
+When you create a project with Forge, you choose one of three database systems. This choice affects how your application stores data, what drivers get installed, and how you'll deploy to production. Let's walk through what each option means and how to work with them.
 
-## Database Selection
+## Choosing Your Database
 
-Choose your database during `forge init`:
+During `forge init`, you'll see this prompt:
 
 ```bash
 ? Select database: 
@@ -13,199 +13,319 @@ Choose your database during `forge init`:
 ❯ SQLite (Good for development)
 ```
 
-## PostgreSQL
+**PostgreSQL** is the recommended choice for production applications. It's a powerful, open-source database with excellent performance, strong data integrity guarantees, and support for complex queries. Most modern cloud platforms offer managed PostgreSQL services, making deployment straightforward.
 
-### Installation
+**MySQL** is a solid alternative if you're already using MySQL infrastructure or your hosting provider specializes in MySQL. It's widely supported and performs well for most use cases.
 
-**macOS (Homebrew)**:
+**SQLite** is perfect for development and small applications. It stores everything in a single file, requires no server setup, and is included with Python. However, it's not recommended for production applications with multiple workers or high concurrency needs.
+
+The good news? You can develop with SQLite and deploy with PostgreSQL by simply changing your `DATABASE_URL` environment variable. The generated code works with all three.
+
+## PostgreSQL Setup
+
+PostgreSQL is a powerful, open-source relational database that's become the standard for modern web applications. When you choose PostgreSQL, Forge configures your project to use `asyncpg`, an async Python driver that allows your FastAPI application to handle database queries without blocking other requests.
+
+### Installing PostgreSQL
+
+First, you need PostgreSQL running on your machine. The installation process varies by operating system:
+
+**macOS with Homebrew**:
 ```bash
 brew install postgresql@15
 brew services start postgresql@15
 ```
 
-**Ubuntu/Debian**:
+This installs PostgreSQL 15 and starts it as a background service. You can verify it's running with `brew services list`.
+
+**Ubuntu/Debian Linux**:
 ```bash
 sudo apt update
 sudo apt install postgresql postgresql-contrib
 sudo systemctl start postgresql
+sudo systemctl enable postgresql  # Start on boot
 ```
 
 **Windows**:
-Download from [postgresql.org](https://www.postgresql.org/download/windows/)
+Download the installer from [postgresql.org](https://www.postgresql.org/download/windows/) and follow the setup wizard. Remember the password you set for the `postgres` user—you'll need it.
 
-### Configuration
+### Creating Your Database
 
-**Development** (`.env.development`):
-```ini
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/dbname
-```
-
-**Production** (`.env.production`):
-```ini
-DATABASE_URL=postgresql+asyncpg://user:password@db:5432/dbname
-```
-
-### Create Database
+Once PostgreSQL is installed, you need to create a database for your application. Connect to PostgreSQL as the superuser:
 
 ```bash
-# Connect to PostgreSQL
+# macOS/Linux
 psql -U postgres
 
-# Create database and user
+# Windows (use SQL Shell from Start menu)
+```
+
+Now create your database and a dedicated user:
+
+```sql
+-- Create the database
 CREATE DATABASE myapi;
-CREATE USER myapi_user WITH PASSWORD 'secure_password';
+
+-- Create a user with a strong password
+CREATE USER myapi_user WITH PASSWORD 'your_secure_password_here';
+
+-- Grant all privileges on the database to your user
 GRANT ALL PRIVILEGES ON DATABASE myapi TO myapi_user;
+
+-- Exit psql
+\q
+```
+
+**Why create a separate user?** It's a security best practice. Your application doesn't need superuser privileges—it only needs access to its own database.
+
+### Configuring Your Application
+
+Now tell your Forge application how to connect to PostgreSQL. Open `secret/.env.development` and set the `DATABASE_URL`:
+
+```ini
+DATABASE_URL=postgresql+asyncpg://myapi_user:your_secure_password_here@localhost:5432/myapi
+```
+
+Let's break down this connection string:
+- `postgresql+asyncpg://` - Use PostgreSQL with the asyncpg driver
+- `myapi_user:your_secure_password_here` - Your database credentials
+- `@localhost:5432` - PostgreSQL server location (localhost) and port (5432 is default)
+- `/myapi` - The database name
+
+For production, you'll use a different URL pointing to your production database server:
+
+```ini
+# Production (.env.production)
+DATABASE_URL=postgresql+asyncpg://myapi_user:production_password@db.example.com:5432/myapi_prod
 ```
 
 ### Python Dependencies
 
-Automatically included in `pyproject.toml`:
+When you choose PostgreSQL, Forge automatically adds `asyncpg` to your `pyproject.toml`:
+
 ```toml
 asyncpg = "^0.29.0"  # Async PostgreSQL driver
 ```
 
-## MySQL
+This driver is what allows your FastAPI application to query PostgreSQL asynchronously, keeping your API responsive even during database operations.
 
-### Installation
+## MySQL Setup
 
-**macOS (Homebrew)**:
+MySQL is another popular open-source relational database. When you choose MySQL, Forge configures your project to use `aiomysql`, an async driver that works similarly to asyncpg but for MySQL databases.
+
+### Installing MySQL
+
+**macOS with Homebrew**:
 ```bash
 brew install mysql
 brew services start mysql
 ```
 
-**Ubuntu/Debian**:
+**Ubuntu/Debian Linux**:
 ```bash
 sudo apt update
 sudo apt install mysql-server
 sudo systemctl start mysql
+sudo mysql_secure_installation  # Follow prompts to secure your installation
 ```
 
 **Windows**:
-Download from [mysql.com](https://dev.mysql.com/downloads/installer/)
+Download the installer from [mysql.com](https://dev.mysql.com/downloads/installer/) and run the setup wizard.
 
-### Configuration
+### Creating Your Database
 
-**Development** (`.env.development`):
-```ini
-DATABASE_URL=mysql+aiomysql://user:password@localhost:3306/dbname
-```
-
-**Production** (`.env.production`):
-```ini
-DATABASE_URL=mysql+aiomysql://user:password@db:3306/dbname
-```
-
-### Create Database
+Connect to MySQL as root:
 
 ```bash
-# Connect to MySQL
 mysql -u root -p
+# Enter your root password
+```
 
-# Create database and user
+Create your database and user:
+
+```sql
+-- Create the database
 CREATE DATABASE myapi;
-CREATE USER 'myapi_user'@'localhost' IDENTIFIED BY 'secure_password';
+
+-- Create a user (replace 'localhost' with '%' to allow remote connections)
+CREATE USER 'myapi_user'@'localhost' IDENTIFIED BY 'your_secure_password';
+
+-- Grant privileges
 GRANT ALL PRIVILEGES ON myapi.* TO 'myapi_user'@'localhost';
 FLUSH PRIVILEGES;
+
+-- Exit
+EXIT;
 ```
+
+### Configuring Your Application
+
+Update `secret/.env.development`:
+
+```ini
+DATABASE_URL=mysql+aiomysql://myapi_user:your_secure_password@localhost:3306/myapi
+```
+
+The connection string format:
+- `mysql+aiomysql://` - Use MySQL with the aiomysql async driver
+- `myapi_user:your_secure_password` - Your credentials
+- `@localhost:3306` - MySQL server and default port
+- `/myapi` - Database name
 
 ### Python Dependencies
 
-Automatically included in `pyproject.toml`:
+Forge adds these to your `pyproject.toml`:
+
 ```toml
 aiomysql = "^0.2.0"  # Async MySQL driver
-cryptography = "^41.0.0"  # Required by aiomysql
+cryptography = "^41.0.0"  # Required by aiomysql for secure connections
 ```
 
-## SQLite
+## SQLite Setup
+
+SQLite is the simplest database option—it's just a file on your disk. There's no server to install, no users to create, no ports to configure. Python includes SQLite support by default, making it perfect for development, testing, and small applications.
+
+### Why SQLite is Great for Development
+
+When you're building a new feature or learning FastAPI, you don't want to spend time setting up PostgreSQL or MySQL. SQLite lets you start coding immediately. The entire database is a single file (usually `app.db`) that you can easily backup, delete, or share with teammates.
 
 ### Installation
 
-SQLite comes pre-installed with Python. No additional installation needed!
+There's nothing to install! SQLite comes with Python. However, you do need the async driver:
+
+```bash
+# This is automatically added to your pyproject.toml
+pip install aiosqlite
+```
 
 ### Configuration
 
-**Development** (`.env.development`):
+Update `secret/.env.development`:
+
 ```ini
 DATABASE_URL=sqlite+aiosqlite:///./app.db
 ```
 
-**Production**:
-SQLite is not recommended for production with multiple workers. Use PostgreSQL or MySQL instead.
+This creates a file called `app.db` in your project root. The `./` means "current directory."
+
+### When NOT to Use SQLite
+
+SQLite has limitations that make it unsuitable for production applications:
+
+**Concurrency**: SQLite locks the entire database file during writes. If you have multiple workers or high traffic, this becomes a bottleneck.
+
+**No Network Access**: SQLite is a local file. You can't connect to it from multiple servers, which rules out horizontal scaling.
+
+**Limited Concurrent Writes**: Only one process can write at a time. For read-heavy applications this is fine, but write-heavy applications will struggle.
+
+**Best Practice**: Develop with SQLite, deploy with PostgreSQL. Your code works with both—just change the `DATABASE_URL`.
 
 ### Python Dependencies
 
-Automatically included in `pyproject.toml`:
 ```toml
 aiosqlite = "^0.19.0"  # Async SQLite driver
 ```
 
-### Advantages
+## Database Migrations with Alembic
 
-- Zero configuration
-- Perfect for development
-- Single file database
-- Great for testing
-- No separate server needed
+When you build an application, your database schema evolves. You add new tables, modify columns, create indexes. Database migrations are how you track and apply these changes in a controlled, reversible way.
 
-### Limitations
+Forge uses Alembic, the standard migration tool for SQLAlchemy-based applications. Think of migrations as "version control for your database schema."
 
-- Not suitable for high-concurrency production
-- Limited concurrent write operations
-- No network access
-- Single file can be a bottleneck
+### Why Migrations Matter
 
-## Database Migrations
+Imagine you deploy your application to production with a `users` table. A week later, you add a `phone_number` column. How do you update the production database without losing data?
 
-Forge uses Alembic for database migrations.
+**Without migrations**: You manually run SQL commands, hope you don't make typos, and pray you remember what you changed when you need to replicate it on another server.
+
+**With migrations**: You generate a migration file that describes the change, test it locally, commit it to version control, and apply it to production with a single command. If something goes wrong, you can roll back.
 
 ### Initial Migration
 
-After project generation, create the initial migration:
+After Forge generates your project, create the initial migration to set up your database tables:
 
 ```bash
-# Generate migration from models
+# Generate a migration from your models
 alembic revision --autogenerate -m "Initial migration"
+```
 
-# Apply migration
+This command:
+1. Looks at your models in `app/models/`
+2. Compares them to your current database (which is empty)
+3. Generates a Python file in `alembic/versions/` with the SQL needed to create your tables
+
+Now apply the migration:
+
+```bash
 alembic upgrade head
 ```
 
-### Creating Migrations
+This runs the migration, creating all your tables. Check your database—you'll see `users`, `refresh_tokens` (if using Complete Auth), and an `alembic_version` table that tracks which migrations have been applied.
 
-When you modify models:
+### Creating New Migrations
+
+Let's say you want to add a `bio` field to your User model. First, modify the model:
+
+```python
+# app/models/user.py
+class User(SQLModel, table=True):
+    # ... existing fields ...
+    bio: Optional[str] = Field(default=None, max_length=500)
+```
+
+Now generate a migration:
 
 ```bash
-# Generate migration
-alembic revision --autogenerate -m "Add user profile fields"
+alembic revision --autogenerate -m "Add bio field to users"
+```
 
-# Review the generated migration in alembic/versions/
+Alembic detects the change and creates a new migration file. **Always review this file before applying it!** Auto-generation is smart but not perfect. Open `alembic/versions/xxx_add_bio_field_to_users.py` and verify the changes look correct.
 
-# Apply migration
+Apply the migration:
+
+```bash
 alembic upgrade head
 ```
 
-### Migration Commands
+Your database now has the `bio` column, and all existing users have `NULL` for this field (which is fine because we made it optional).
+
+### Common Migration Commands
 
 ```bash
-# Show current revision
+# Show current database version
 alembic current
 
 # Show migration history
-alembic history
+alembic history --verbose
 
-# Upgrade to latest
+# Upgrade to latest version
 alembic upgrade head
 
-# Upgrade one version
+# Upgrade one version at a time
 alembic upgrade +1
 
-# Downgrade one version
+# Downgrade one version (undo last migration)
 alembic downgrade -1
 
-# Downgrade to specific revision
+# Downgrade to specific version
 alembic downgrade <revision_id>
+
+# Downgrade to beginning (careful!)
+alembic downgrade base
 ```
+
+### Migration Best Practices
+
+**1. Always review auto-generated migrations**: Alembic is smart but can miss complex changes like renaming columns (it sees a drop + add instead of a rename).
+
+**2. Test migrations locally first**: Run `alembic upgrade head` on your development database before deploying to production.
+
+**3. Make migrations reversible**: Ensure your `downgrade()` function properly undoes the `upgrade()` function.
+
+**4. One logical change per migration**: Don't bundle unrelated changes. If you're adding a table and modifying another, consider separate migrations.
+
+**5. Never edit applied migrations**: Once a migration is applied to production, don't modify it. Create a new migration to fix issues.
+
+**6. Commit migrations to version control**: Migration files are code. They belong in Git alongside your models.
 
 ## ORM Configuration
 
