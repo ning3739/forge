@@ -1,0 +1,109 @@
+/* Custom CSS for Forge documentation */
+
+/* Force full width content - override RTD theme defaults */
+.wy-nav-content {
+    max-width: none !important;
+    padding: 1.618em 3em !important;
+}
+
+/* Ensure content wrapper uses available space */
+.wy-nav-content-wrap {
+    margin-left: 300px !important;
+    background: #fcfcfc;
+}
+
+/* Remove any max-width constraints */
+.rst-content {
+    max-width: none !important;
+}
+
+/* Center content with reasonable max width */
+.document {
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+}
+
+/* Override RTD theme's default 800px max-width */
+.wy-nav-content-wrap .wy-nav-content {
+    max-width: none !important;
+}
+
+/* Ensure main content area uses full width */
+div.document {
+    width: 100% !important;
+    max-width: 1400px !important;
+}
+
+/* Remove right margin/padding that creates whitespace */
+.wy-nav-content {
+    margin-right: 0 !important;
+}
+
+/* Better logo display */
+.wy-side-nav-search {
+    background-color: #2980B9;
+}
+
+.wy-side-nav-search > a img.logo {
+    width: 200px;
+    margin: 0.85rem auto;
+}
+
+/* Improve code block styling */
+.rst-content pre.literal-block,
+.rst-content div[class^='highlight'] {
+    border: 1px solid #e1e4e5;
+    border-radius: 4px;
+}
+
+/* Better table styling */
+.rst-content table.docutils {
+    width: 100%;
+    border: none;
+}
+
+.rst-content table.docutils td,
+.rst-content table.docutils th {
+    border: 1px solid #e1e4e5;
+    padding: 8px;
+}
+
+/* Improve admonition (note, warning, etc.) styling */
+.rst-content .admonition {
+    border-radius: 4px;
+}
+
+/* Better link colors */
+.rst-content a:link {
+    color: #2980B9;
+}
+
+.rst-content a:visited {
+    color: #9B59B6;
+}
+
+.rst-content a:hover {
+    color: #3091d1;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 1400px) {
+    .wy-nav-content {
+        padding: 1.618em 2em !important;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .wy-nav-content {
+        max-width: 100% !important;
+        padding: 1.618em 1em !important;
+    }
+    
+    .wy-nav-content-wrap {
+        margin-left: 0 !important;
+    }
+    
+    .document {
+        max-width: 100% !important;
+    }
+}
