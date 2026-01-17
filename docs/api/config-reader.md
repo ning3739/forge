@@ -384,7 +384,7 @@ Get metadata information.
 metadata = config_reader.get_metadata()
 # {
 #     "created_at": "2024-01-17T10:00:00",
-#     "forge_version": "0.1.8.4"
+#     "forge_version": "0.1.8.3"
 # }
 ```
 

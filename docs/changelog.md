@@ -2,30 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+
+
 ## [0.1.8.4] - 2026-01-18
 
 ### Added
 
-- **Read the Docs Documentation**: Added comprehensive documentation infrastructure
-  - Created MkDocs configuration with Material theme
-  - Added .readthedocs.yaml for automatic documentation building
-  - Created 9 core documentation pages:
-    - Home page with project overview
+- **Read the Docs Documentation**: Added comprehensive documentation infrastructure using Sphinx
+  - Migrated from MkDocs to Sphinx with sphinx-rtd-theme (Read the Docs official theme)
+  - Created Sphinx configuration (conf.py) with Markdown support via MyST Parser
+  - Added .readthedocs.yaml for automatic Sphinx documentation building
+  - Created 9 core documentation pages (maintained as Markdown files):
+    - Home page with project overview (index.rst)
     - Installation guide with troubleshooting
     - Quick start tutorial with step-by-step examples
     - First project walkthrough with detailed setup
-    - Architecture overview with Mermaid diagrams
+    - Architecture overview with diagrams
     - Generator system deep dive with examples
     - Complete CLI commands reference
     - ConfigReader API documentation
     - Changelog (version history)
   - Documentation features:
-    - Light/dark theme toggle
+    - Classic Read the Docs theme
     - Full-text search
     - Code syntax highlighting with copy buttons
-    - Architecture diagrams using Mermaid
+    - GitHub integration
     - Responsive design for all devices
-  - Documentation ready for deployment at https://forge.readthedocs.io
+    - Support for both RST and Markdown files
+  - Documentation ready for deployment at https://ningfastforge.readthedocs.io
 
 ## [0.1.8.3] - 2026-01-16
 

@@ -57,3 +57,9 @@ yarn-error.log
 
 # kiro
 .kiro
+# Sphinx build directories
+docs/_build/
+docs/_static/
+# MkDocs (old)
+site/
+mkdocs.yml

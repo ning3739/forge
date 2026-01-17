@@ -58,7 +58,7 @@ forge --version
 You should see output like:
 
 ```
-Forge CLI v0.1.8.4
+Forge CLI v0.1.8.3
 ```
 
 ## System Dependencies

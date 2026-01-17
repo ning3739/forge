@@ -113,7 +113,7 @@ nano secret/.env.development
 
 Key environment variables to configure:
 
-```env
+```ini
 # Application
 APP_NAME=Blog API
 APP_ENV=development

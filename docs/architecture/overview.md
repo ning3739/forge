@@ -113,7 +113,7 @@ flowchart TB
   },
   "metadata": {
     "created_at": "2024-01-17T10:00:00",
-    "forge_version": "0.1.8.4"
+    "forge_version": "0.1.8.3"
   }
 }
 ```
@@ -365,5 +365,5 @@ This architecture provides:
 ## Learn More
 
 - [Generator System](generator-system.md) - Deep dive into generators
-- [Configuration-First](configuration-first.md) - Configuration design
-- [Project Structure](project-structure.md) - Generated project layout
+- [Configuration Options](../user-guide/configuration.md) - Configuration design
+- [First Project](../getting-started/first-project.md) - Generated project layout

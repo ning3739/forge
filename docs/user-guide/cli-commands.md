@@ -261,14 +261,14 @@ forge -v
 ### Output
 
 ```
-Forge CLI v0.1.8.4
+Forge CLI v0.1.8.3
 ```
 
 ### Example
 
 ```bash
 $ forge --version
-Forge CLI v0.1.8.4
+Forge CLI v0.1.8.3
 ```
 
 ## forge --help
@@ -345,7 +345,7 @@ When you run `forge init`, it creates `.forge/config.json` in your project:
   },
   "metadata": {
     "created_at": "2024-01-17T10:00:00.000000",
-    "forge_version": "0.1.8.4"
+    "forge_version": "0.1.8.3"
   }
 }
 ```

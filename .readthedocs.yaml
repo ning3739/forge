@@ -7,9 +7,9 @@ build:
   tools:
     python: "3.11"
 
-# Build documentation with MkDocs
-mkdocs:
-  configuration: mkdocs.yml
+# Build documentation with Sphinx
+sphinx:
+  configuration: docs/conf.py
 
 # Python dependencies required for building documentation
 python:
