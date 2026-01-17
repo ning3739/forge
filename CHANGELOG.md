@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 
 
+## [0.1.8.5] - 2026-01-18
+
+### Fixed
+
+- **Documentation Configuration**: Fixed configuration structure documentation to match actual code implementation
+  - Corrected config.json structure from flat to nested format
+  - Updated database type values to use proper casing (PostgreSQL, MySQL, SQLite)
+  - Fixed authentication field from `auth_mode` to `features.auth.type`
+  - Updated all configuration examples to reflect actual structure
+  - Added proper Redis and Celery configuration object formats
+
+### Improved
+
+- **Documentation URLs**: Updated PyPI documentation link to ReadTheDocs (https://ningfastforge.readthedocs.io/)
+- **Documentation Layout**: Removed "Indices and tables" section from homepage for cleaner appearance
+- **CSS Optimization**: Enhanced page layout with stronger CSS specificity to reduce whitespace
+
 ## [0.1.8.4] - 2026-01-18
 
 ### Added

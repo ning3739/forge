@@ -17,13 +17,33 @@ your-project/
 ```json
 {
   "project_name": "my_api",
-  "database": "postgresql",
-  "orm": "sqlmodel",
-  "auth_mode": "complete",
-  "use_redis": true,
-  "use_celery": true,
-  "use_docker": true,
-  "include_tests": true
+  "database": {
+    "type": "PostgreSQL",
+    "orm": "SQLModel",
+    "migration_tool": "Alembic"
+  },
+  "features": {
+    "auth": {
+      "type": "complete",
+      "refresh_token": true
+    },
+    "redis": {
+      "enabled": true,
+      "features": ["caching", "sessions", "queues"]
+    },
+    "celery": {
+      "enabled": true,
+      "features": ["background_tasks", "scheduled_tasks", "task_monitoring"]
+    },
+    "cors": true,
+    "dev_tools": true,
+    "testing": true,
+    "docker": true
+  },
+  "metadata": {
+    "created_at": "2026-01-18T12:00:00.000000",
+    "forge_version": "0.1.8.4"
+  }
 }
 ```
 
@@ -44,13 +64,13 @@ your-project/
 
 ### Database Options
 
-#### `database`
+#### `database.type`
 
 - **Type**: `string`
 - **Required**: Yes
-- **Options**: `"postgresql"`, `"mysql"`, `"sqlite"`
+- **Options**: `"PostgreSQL"`, `"MySQL"`, `"SQLite"`
 - **Description**: Database system to use
-- **Default**: `"postgresql"`
+- **Default**: `"PostgreSQL"`
 
 **PostgreSQL** (Recommended for production):
 - Async driver: `asyncpg`
@@ -67,13 +87,13 @@ your-project/
 - File-based database
 - Perfect for development and small applications
 
-#### `orm`
+#### `database.orm`
 
 - **Type**: `string`
 - **Required**: Yes
-- **Options**: `"sqlmodel"`, `"sqlalchemy"`
+- **Options**: `"SQLModel"`, `"SQLAlchemy"`
 - **Description**: ORM framework to use
-- **Default**: `"sqlmodel"`
+- **Default**: `"SQLModel"`
 
 **SQLModel** (Recommended):
 - Modern, type-safe ORM
@@ -88,16 +108,12 @@ your-project/
 
 ### Authentication Options
 
-#### `auth_mode`
+#### `features.auth.type`
 
 - **Type**: `string`
 - **Required**: Yes
-- **Options**: `"none"`, `"basic"`, `"complete"`
+- **Options**: `"basic"`, `"complete"`
 - **Description**: Authentication system to include
-
-**None**:
-- No authentication system
-- Use for public APIs or when implementing custom auth
 
 **Basic**:
 - JWT token authentication
@@ -114,49 +130,63 @@ your-project/
 
 ### Optional Features
 
-#### `use_redis`
+#### `features.redis`
 
-- **Type**: `boolean`
+- **Type**: `object` or `boolean`
 - **Required**: No
 - **Default**: `false`
 - **Description**: Include Redis for caching and session storage
 
-When enabled:
-- Redis client configuration
-- Async Redis connection
-- Cache utilities
-- Session management support
+When enabled as object:
+```json
+"redis": {
+  "enabled": true,
+  "features": ["caching", "sessions", "queues"]
+}
+```
 
-#### `use_celery`
+When enabled as boolean:
+```json
+"redis": true
+```
 
-- **Type**: `boolean`
+#### `features.celery`
+
+- **Type**: `object` or `boolean`
 - **Required**: No
 - **Default**: `false`
 - **Description**: Include Celery for background tasks
 
-When enabled:
-- Celery worker configuration
-- Celery Beat for scheduled tasks
-- Database backup task example
-- Task monitoring setup
+When enabled as object:
+```json
+"celery": {
+  "enabled": true,
+  "features": ["background_tasks", "scheduled_tasks", "task_monitoring"]
+}
+```
 
-**Note**: Celery requires Redis, so `use_redis` will be automatically enabled.
+When enabled as boolean:
+```json
+"celery": true
+```
 
-#### `use_docker`
+**Note**: Celery requires Redis, so `redis` will be automatically enabled.
+
+#### `features.cors`
 
 - **Type**: `boolean`
 - **Required**: No
 - **Default**: `false`
-- **Description**: Include Docker deployment configuration
+- **Description**: Enable CORS middleware
 
-When enabled:
-- `Dockerfile` for application
-- `docker-compose.yml` for all services
-- `.dockerignore` file
-- Production-ready configuration
-- Health checks and dependencies
+#### `features.dev_tools`
 
-#### `include_tests`
+- **Type**: `boolean`
+- **Required**: No
+- **Default**: `false`
+- **Description**: Include development tools (Black + Ruff)
+
+#### `features.testing`
 
 - **Type**: `boolean`
 - **Required**: No
@@ -170,6 +200,20 @@ When enabled:
 - Authentication tests
 - User management tests
 - 80%+ code coverage
+
+#### `features.docker`
+
+- **Type**: `boolean`
+- **Required**: No
+- **Default**: `false`
+- **Description**: Include Docker deployment configuration
+
+When enabled:
+- `Dockerfile` for application
+- `docker-compose.yml` for all services
+- `.dockerignore` file
+- Production-ready configuration
+- Health checks and dependencies
 
 ## Modifying Configuration
 
@@ -187,18 +231,26 @@ You can manually edit `.forge/config.json` and regenerate specific components, b
 
 ## Configuration Examples
 
-### Minimal API (No Auth, SQLite)
+### Minimal API (SQLite, Basic Auth)
 
 ```json
 {
   "project_name": "simple_api",
-  "database": "sqlite",
-  "orm": "sqlmodel",
-  "auth_mode": "none",
-  "use_redis": false,
-  "use_celery": false,
-  "use_docker": false,
-  "include_tests": false
+  "database": {
+    "type": "SQLite",
+    "orm": "SQLModel",
+    "migration_tool": "Alembic"
+  },
+  "features": {
+    "auth": {
+      "type": "basic",
+      "refresh_token": false
+    },
+    "cors": true,
+    "dev_tools": false,
+    "testing": false,
+    "docker": false
+  }
 }
 ```
 
@@ -207,13 +259,29 @@ You can manually edit `.forge/config.json` and regenerate specific components, b
 ```json
 {
   "project_name": "production_api",
-  "database": "postgresql",
-  "orm": "sqlmodel",
-  "auth_mode": "complete",
-  "use_redis": true,
-  "use_celery": true,
-  "use_docker": true,
-  "include_tests": true
+  "database": {
+    "type": "PostgreSQL",
+    "orm": "SQLModel",
+    "migration_tool": "Alembic"
+  },
+  "features": {
+    "auth": {
+      "type": "complete",
+      "refresh_token": true
+    },
+    "redis": {
+      "enabled": true,
+      "features": ["caching", "sessions", "queues"]
+    },
+    "celery": {
+      "enabled": true,
+      "features": ["background_tasks", "scheduled_tasks", "task_monitoring"]
+    },
+    "cors": true,
+    "dev_tools": true,
+    "testing": true,
+    "docker": true
+  }
 }
 ```
 
@@ -222,13 +290,21 @@ You can manually edit `.forge/config.json` and regenerate specific components, b
 ```json
 {
   "project_name": "dev_api",
-  "database": "sqlite",
-  "orm": "sqlmodel",
-  "auth_mode": "basic",
-  "use_redis": false,
-  "use_celery": false,
-  "use_docker": false,
-  "include_tests": true
+  "database": {
+    "type": "SQLite",
+    "orm": "SQLModel",
+    "migration_tool": "Alembic"
+  },
+  "features": {
+    "auth": {
+      "type": "basic",
+      "refresh_token": false
+    },
+    "cors": true,
+    "dev_tools": true,
+    "testing": true,
+    "docker": false
+  }
 }
 ```
 

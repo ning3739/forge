@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'Forge'
 copyright = '2026, ning3739'
 author = 'ning3739'
-release = '0.1.8.4'
+release = '0.1.8.5'
 version = '0.1.8'
 
 # -- General configuration ---------------------------------------------------

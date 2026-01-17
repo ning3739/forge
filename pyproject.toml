@@ -1,6 +1,6 @@
 [project]
 name = "ningfastforge"
-version = "0.1.8.3"
+version = "0.1.8.5"
 description = "A modern FastAPI project scaffolding CLI tool"
 readme = "PYPI.md"
 requires-python = ">=3.9"
@@ -39,10 +39,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ning3739/forge"
-Documentation = "https://github.com/ning3739/forge#readme"
+Homepage = "https://ningfastforge.readthedocs.io/"
+Documentation = "https://ningfastforge.readthedocs.io/"
 Repository = "https://github.com/ning3739/forge"
 Issues = "https://github.com/ning3739/forge/issues"
+Changelog = "https://github.com/ning3739/forge/blob/main/CHANGELOG.md"
 
 [project.scripts]
 forge = "main:main"

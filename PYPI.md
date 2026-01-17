@@ -199,4 +199,4 @@ Built with ❤️ using:
 
 ---
 
-**Need help?** Check out the [full documentation](https://github.com/ning3739/forge) or open an issue on GitHub.
+**Need help?** Check out the [full documentation](https://ningfastforge.readthedocs.io) or open an issue on GitHub.

@@ -1,6 +1,3 @@
-Forge Documentation
-===================
-
 .. image:: ../assets/logo.svg
    :align: center
    :width: 480px
@@ -149,10 +146,3 @@ Forge is released under the `MIT License <https://opensource.org/licenses/MIT>`_
 ----
 
 Made with ❤️ for the FastAPI community
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
