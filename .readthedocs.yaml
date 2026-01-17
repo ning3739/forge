@@ -1,0 +1,17 @@
+# Build configuration for Read the Docs
+version: 2
+
+# Build with OS
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
+
+# Build documentation with MkDocs
+mkdocs:
+  configuration: mkdocs.yml
+
+# Python dependencies required for building documentation
+python:
+  install:
+    - requirements: docs/requirements.txt
