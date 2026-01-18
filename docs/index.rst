@@ -20,6 +20,28 @@ Forge is a CLI tool that generates production-ready FastAPI projects. It collect
    pip install ningfastforge
    forge init
 
+Why Forge?
+----------
+
+Every time you start a new FastAPI project, do you find yourself repeating the same tasks?
+
+- Setting up database connections and ORM configuration
+- Implementing JWT authentication and user management
+- Integrating Redis caching and Celery task queues
+- Writing Docker and deployment configurations
+- Configuring test frameworks and CI/CD pipelines
+
+**Forge was built to solve this problem.**
+
+As a FastAPI developer, I got tired of building the same infrastructure from scratch for every new project. While there are many templates available online, they're either too simple or too complex to customize.
+
+Forge's design philosophy:
+
+- **Generate on demand**: Only generate what you need, nothing more, nothing less
+- **Production-ready**: Generated code follows best practices and is ready for production
+- **Easy to understand**: Clean code structure that's easy to maintain and extend
+- **Quick start**: Go from zero to a complete project skeleton in minutes
+
 Features
 --------
 
