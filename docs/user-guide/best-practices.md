@@ -1,691 +1,315 @@
-# Best Practices & FAQ
+# Best Practices
 
-This guide covers best practices, common patterns, and frequently asked questions when using Forge-generated projects.
+This guide covers recommended practices for working with Forge-generated projects.
 
-## Project Setup Best Practices
+## Project Structure
 
-### 1. Choose the Right Database
+### Keep the Generated Structure
 
-**PostgreSQL** (Recommended for Production):
-- Best for production applications
-- Full-featured with excellent performance
-- Strong data integrity and ACID compliance
-- Great for complex queries and relationships
+The generated structure follows FastAPI conventions. Maintain this organization:
 
-**MySQL**:
-- Good for existing MySQL infrastructure
-- Wide hosting support
-- Solid performance for most use cases
+```
+app/
+├── core/           # Configuration, database, security
+├── models/         # Database models
+├── schemas/        # Pydantic schemas
+├── crud/           # Database operations
+├── services/       # Business logic
+├── routers/v1/     # API endpoints
+└── main.py         # Application entry
+```
 
-**SQLite**:
-- Perfect for development and testing
-- Great for small applications and prototypes
-- No server setup required
-- Easy to backup (single file)
+### Adding New Features
 
-### 2. Authentication Mode Selection
+When adding new features, follow the existing patterns:
 
-**Complete JWT Auth** (Recommended):
-- Use when you need email verification
-- Required for password reset functionality
-- Better security with refresh tokens
-- Multi-device login support
-- Suitable for production applications
+1. **Model**: Create in `app/models/`
+2. **Schema**: Create in `app/schemas/`
+3. **CRUD**: Create in `app/crud/`
+4. **Service** (if needed): Create in `app/services/`
+5. **Router**: Create in `app/routers/v1/`
+6. **Register router** in `app/main.py`
 
-**Basic JWT Auth**:
-- Use for internal tools or MVPs
-- Simpler setup (no email configuration)
-- Faster development for prototypes
-- Can upgrade to Complete later
+### Example: Adding a Posts Feature
 
-### 3. When to Enable Redis
+```python
+# 1. app/models/post.py
+class Post(SQLModel, table=True):
+    id: Optional[int] = Field(primary_key=True)
+    title: str
+    content: str
+    author_id: int = Field(foreign_key="users.id")
 
-Enable Redis if you need:
-- **Caching**: Frequently accessed data
-- **Session Storage**: User sessions across multiple servers
-- **Rate Limiting**: API request throttling
-- **Celery**: Background task processing (required)
+# 2. app/schemas/post.py
+class PostCreate(BaseModel):
+    title: str
+    content: str
 
-**Note**: Redis adds complexity. Skip it for simple applications.
+class PostResponse(BaseModel):
+    id: int
+    title: str
+    content: str
+    author_id: int
 
-### 4. When to Enable Celery
+# 3. app/crud/post.py
+class PostCRUD:
+    @staticmethod
+    async def create(db: AsyncSession, post: PostCreate, author_id: int):
+        ...
 
-Enable Celery if you need:
-- **Email Sending**: Async email delivery
-- **Report Generation**: Long-running reports
-- **Data Processing**: Batch data processing
-- **Scheduled Tasks**: Cron-like periodic jobs
-- **Image Processing**: Thumbnail generation, etc.
+# 4. app/routers/v1/posts.py
+router = APIRouter(prefix="/posts", tags=["Posts"])
 
-**Note**: Celery requires Redis and adds operational complexity.
+@router.post("/", response_model=PostResponse)
+async def create_post(...):
+    ...
 
-## Development Workflow
+# 5. app/main.py - add import and include_router
+```
 
-### 1. Environment Management
+## Security
 
-Always use environment-specific configuration:
+### Environment Variables
+
+Never commit secrets to version control:
+
+```bash
+# .gitignore should include:
+secret/.env.development
+secret/.env.production
+```
+
+Use `.env.example` as a template without real values.
+
+### JWT Configuration
+
+1. **Generate strong secrets**: Use at least 32 random characters
+   ```bash
+   python -c "import secrets; print(secrets.token_urlsafe(32))"
+   ```
+
+2. **Keep access tokens short-lived**: 15-30 minutes is recommended
+
+3. **Rotate secrets periodically**: Update JWT_SECRET_KEY regularly
+
+### Password Security
+
+The generated code uses Argon2 with secure defaults. Don't weaken these settings.
+
+### CORS Configuration
+
+In production, restrict allowed origins:
 
 ```bash
 # Development
-export ENVIRONMENT=development
-uv run uvicorn app.main:app --reload
-
-# Production
-export ENVIRONMENT=production
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-
-### 2. Database Migrations
-
-Follow this workflow for database changes:
-
-```bash
-# 1. Modify your models
-# Edit app/models/user.py, etc.
-
-# 2. Generate migration
-uv run alembic revision --autogenerate -m "add user profile fields"
-
-# 3. Review the generated migration
-# Check alembic/versions/xxx_add_user_profile_fields.py
-
-# 4. Apply migration
-uv run alembic upgrade head
-
-# 5. Test in development first!
-```
-
-**Important**: Always review auto-generated migrations before applying them.
-
-### 3. Testing Strategy
-
-Write tests for:
-- **API Endpoints**: All routes and status codes
-- **Authentication**: Login, registration, token refresh
-- **Business Logic**: Services and CRUD operations
-- **Edge Cases**: Invalid inputs, error handling
-
-```bash
-# Run tests before committing
-uv run pytest
-
-# Check coverage
-uv run pytest --cov=app --cov-report=html
-
-# Aim for 80%+ coverage
-```
-
-### 4. Code Quality
-
-Use the included dev tools:
-
-```bash
-# Format code
-uv run black app/
-
-# Check linting
-uv run ruff check app/
-
-# Fix auto-fixable issues
-uv run ruff check app/ --fix
-
-# Run before committing
-uv run black app/ && uv run ruff check app/ --fix
-```
-
-## Security Best Practices
-
-### 1. Environment Variables
-
-**Never commit secrets to version control!**
-
-```bash
-# ✅ Good - Use environment variables
-JWT_SECRET_KEY=your-secret-key-here
-
-# ❌ Bad - Hardcoded in code
-SECRET_KEY = "my-secret-key"
-```
-
-### 2. JWT Secret Key
-
-Generate a strong secret key:
-
-```python
-import secrets
-print(secrets.token_urlsafe(32))
-# Use this in production!
-```
-
-**Change the default secret key before deploying!**
-
-### 3. Password Requirements
-
-The generated code includes basic password hashing. Consider adding:
-
-```python
-# app/schemas/user.py
-from pydantic import validator
-
-class UserCreate(BaseModel):
-    password: str
-    
-    @validator('password')
-    def password_strength(cls, v):
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
-        if not any(c.isupper() for c in v):
-            raise ValueError('Password must contain uppercase')
-        if not any(c.islower() for c in v):
-            raise ValueError('Password must contain lowercase')
-        if not any(c.isdigit() for c in v):
-            raise ValueError('Password must contain digit')
-        return v
-```
-
-### 4. CORS Configuration
-
-Be specific with CORS origins in production:
-
-```ini
-# Development - Allow localhost
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
 
-# Production - Specific domains only
-CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+# Production - be specific
+CORS_ALLOWED_ORIGINS=https://myapp.com,https://www.myapp.com
 ```
 
-### 5. Rate Limiting
+## Database
 
-When Redis is enabled, use the rate limiting decorator:
+### Connection Pool Tuning
+
+Adjust pool settings based on your workload:
+
+```bash
+# For low-traffic applications
+POOL_SIZE=3
+POOL_MAX_OVERFLOW=2
+
+# For high-traffic applications
+POOL_SIZE=10
+POOL_MAX_OVERFLOW=5
+```
+
+### Migration Best Practices
+
+1. **Review auto-generated migrations**: Always check before applying
+2. **Test migrations**: Apply to a test database first
+3. **Backup before migrating**: Especially in production
+4. **Use descriptive messages**: `alembic revision -m "Add user email index"`
+
+### Query Optimization
+
+Use indexes for frequently queried fields:
 
 ```python
-from app.core.decorators.rate_limit import rate_limit
-
-@router.post("/login")
-@rate_limit(max_requests=5, window_seconds=300)  # 5 attempts per 5 minutes
-async def login(user_data: UserLogin):
-    # Login logic
-    pass
+class User(SQLModel, table=True):
+    email: str = Field(unique=True, index=True)  # Indexed
+    username: str = Field(unique=True, index=True)  # Indexed
 ```
 
-## Performance Optimization
+## API Design
 
-### 1. Database Connection Pooling
+### Versioning
 
-The generated code includes connection pooling. Adjust for your needs:
+The generated structure uses `/api/v1/` prefix. When making breaking changes:
 
-```ini
-# For high-traffic applications
-POOL_SIZE=20
-POOL_MAX_OVERFLOW=10
+1. Create new routers in `app/routers/v2/`
+2. Keep v1 endpoints working
+3. Deprecate v1 gradually
 
-# For low-traffic applications
-POOL_SIZE=5
-POOL_MAX_OVERFLOW=2
+### Error Handling
+
+Use consistent error responses:
+
+```python
+from fastapi import HTTPException
+
+# Good - consistent format
+raise HTTPException(
+    status_code=404,
+    detail="User not found"
+)
+
+# The global exception handler formats this as:
+# {"status": 404, "error": "User not found"}
 ```
 
-### 2. Redis Caching Strategy
+### Pagination
+
+For list endpoints, implement pagination:
+
+```python
+@router.get("/users")
+async def list_users(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: AsyncSession = Depends(get_db)
+):
+    return await user_crud.get_all(db, skip=skip, limit=limit)
+```
+
+## Performance
+
+### Async Operations
+
+Use async throughout the request path:
+
+```python
+# Good - async database operations
+async def get_user(db: AsyncSession, user_id: int):
+    return await db.get(User, user_id)
+
+# Avoid - blocking operations in async context
+def get_user_sync(db: Session, user_id: int):  # Don't do this
+    return db.get(User, user_id)
+```
+
+### Caching with Redis
 
 Cache expensive operations:
 
 ```python
-from app.core.redis import redis_manager
-import json
-
-async def get_user_stats(user_id: int):
-    # Try cache first
-    cache_key = f"user_stats:{user_id}"
+async def get_user_profile(user_id: int):
+    cache_key = f"user:profile:{user_id}"
+    
+    # Try cache
     cached = await redis_manager.get_async(cache_key)
     if cached:
         return json.loads(cached)
     
-    # Compute stats (expensive)
-    stats = await compute_user_stats(user_id)
-    
-    # Cache for 1 hour
-    await redis_manager.set_async(
-        cache_key,
-        json.dumps(stats),
-        ex=3600
-    )
-    return stats
+    # Query and cache
+    profile = await fetch_profile(user_id)
+    await redis_manager.set_async(cache_key, json.dumps(profile), ex=300)
+    return profile
 ```
 
-### 3. Async Operations
+### Background Tasks
 
-Use async/await for I/O operations:
+Offload heavy operations to Celery:
 
 ```python
-# ✅ Good - Async database queries
-async def get_users():
-    async with get_db() as db:
-        result = await db.execute(select(User))
-        return result.scalars().all()
-
-# ❌ Bad - Blocking operations
-def get_users():
-    # Blocks the event loop
-    time.sleep(1)
-    return users
+@router.post("/reports")
+async def generate_report(data: ReportRequest):
+    # Queue the task instead of processing inline
+    task = generate_report_task.delay(data.dict())
+    return {"task_id": task.id, "status": "processing"}
 ```
 
-### 4. Background Tasks
+## Testing
 
-Move slow operations to Celery:
+### Test Coverage
+
+Aim for high coverage on critical paths:
+
+- Authentication flows
+- Business logic in services
+- Data validation in schemas
+- Database operations in CRUD
+
+### Test Isolation
+
+Each test should be independent:
 
 ```python
-# ✅ Good - Async email sending
-@router.post("/register")
-async def register(user_data: UserCreate):
-    user = await create_user(user_data)
-    # Queue email task
-    send_welcome_email.delay(user.email)
-    return user
-
-# ❌ Bad - Blocking email sending
-@router.post("/register")
-async def register(user_data: UserCreate):
-    user = await create_user(user_data)
-    # Blocks the request
-    send_email_sync(user.email)
-    return user
+@pytest.fixture
+async def db_session():
+    # Fresh session for each test
+    # Rollback after test
+    # Clear data for isolation
 ```
 
-## Common Patterns
+### Mock External Services
 
-### 1. Adding Custom Endpoints
-
-Create a new router:
-
-```python
-# app/routers/v1/posts.py
-from fastapi import APIRouter, Depends
-from app.core.deps import get_current_user
-
-router = APIRouter(prefix="/posts", tags=["posts"])
-
-@router.get("/")
-async def list_posts():
-    return {"posts": []}
-
-@router.post("/")
-async def create_post(
-    post_data: PostCreate,
-    current_user: User = Depends(get_current_user)
-):
-    # Create post
-    pass
-```
-
-Register in router aggregator:
-
-```python
-# app/routers/v1/__init__.py
-from app.routers.v1 import auth, user, posts
-
-api_router = APIRouter()
-api_router.include_router(auth.router)
-api_router.include_router(user.router)
-api_router.include_router(posts.router)  # Add this
-```
-
-### 2. Adding Database Models
-
-Create model file:
-
-```python
-# app/models/post.py
-from sqlmodel import Field, SQLModel, Relationship
-from typing import Optional
-from datetime import datetime
-
-class Post(SQLModel, table=True):
-    __tablename__ = "posts"
-    
-    id: Optional[int] = Field(default=None, primary_key=True)
-    title: str = Field(max_length=200)
-    content: str
-    author_id: int = Field(foreign_key="users.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    
-    # Relationships
-    author: Optional["User"] = Relationship(back_populates="posts")
-```
-
-Update User model:
-
-```python
-# app/models/user.py
-class User(SQLModel, table=True):
-    # ... existing fields ...
-    
-    # Add relationship
-    posts: list["Post"] = Relationship(back_populates="author")
-```
-
-Create migration:
-
-```bash
-uv run alembic revision --autogenerate -m "add posts table"
-uv run alembic upgrade head
-```
-
-### 3. Custom Celery Tasks
-
-Create task file:
-
-```python
-# app/tasks/report_task.py
-from app.core.celery import celery_app, with_db_init
-
-@celery_app.task(name="generate_report")
-@with_db_init
-def generate_report(user_id: int):
-    # Generate report logic
-    report = create_report(user_id)
-    return {"status": "completed", "report_id": report.id}
-```
-
-Schedule periodic task:
-
-```python
-# app/core/celery.py
-from celery.schedules import crontab
-
-celery_app.conf.beat_schedule = {
-    'generate-daily-report': {
-        'task': 'app.tasks.report_task.generate_report',
-        'schedule': crontab(hour=8, minute=0),  # Daily at 8 AM
-    }
-}
-```
-
-### 4. Custom Middleware
-
-Add middleware to main.py:
-
-```python
-# app/main.py
-from fastapi import Request
-import time
-
-@app.middleware("http")
-async def add_process_time_header(request: Request, call_next):
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
-    return response
-```
-
-## Frequently Asked Questions
-
-### General Questions
-
-**Q: Can I regenerate my project after making changes?**
-
-A: Yes, but be careful! Running `forge init` again will overwrite generated files. Save your custom code first or use version control.
-
-**Q: Can I use Forge with an existing project?**
-
-A: Forge is designed for new projects. For existing projects, you can generate a new project and copy relevant code.
-
-**Q: How do I upgrade Forge?**
-
-```bash
-pip install --upgrade ningfastforge
-```
-
-**Q: Where are the logs stored?**
-
-A: Logs are in the `logs/` directory. Check `logs/app_development.log` for development logs.
-
-### Database Questions
-
-**Q: How do I switch databases after generation?**
-
-A: Update `DATABASE_URL` in your `.env` file and run migrations:
-
-```bash
-# Update .env
-DATABASE_URL=postgresql+asyncpg://user:pass@localhost/newdb
-
-# Run migrations
-uv run alembic upgrade head
-```
-
-**Q: How do I backup my database?**
-
-```bash
-# PostgreSQL
-pg_dump mydb > backup.sql
-
-# MySQL
-mysqldump mydb > backup.sql
-
-# SQLite
-cp mydb.db backup.db
-```
-
-**Q: Can I use multiple databases?**
-
-A: Yes, but you'll need to configure additional database connections manually. The generated code uses a single database.
-
-### Authentication Questions
-
-**Q: How do I customize the User model?**
-
-A: Edit `app/models/user.py` and create a migration:
-
-```python
-# Add fields
-phone: Optional[str] = None
-avatar_url: Optional[str] = None
-
-# Create migration
-uv run alembic revision --autogenerate -m "add user fields"
-uv run alembic upgrade head
-```
-
-**Q: How do I change token expiration?**
-
-A: Update `.env` file:
-
-```ini
-JWT_ACCESS_TOKEN_EXPIRATION=3600  # 1 hour in seconds
-JWT_REFRESH_TOKEN_EXPIRATION=604800  # 7 days in seconds
-```
-
-**Q: Can I add OAuth (Google, GitHub, etc.)?**
-
-A: The generated code doesn't include OAuth. You'll need to add it manually using libraries like `authlib` or `python-social-auth`.
-
-### Redis & Celery Questions
-
-**Q: Do I need Redis for caching?**
-
-A: No, you can implement caching without Redis using in-memory caches or other solutions. Redis is recommended for distributed caching.
-
-**Q: Can I use RabbitMQ instead of Redis for Celery?**
-
-A: Yes, update `CELERY_BROKER_URL` in `.env`:
-
-```ini
-CELERY_BROKER_URL=amqp://guest:guest@localhost:5672//
-```
-
-**Q: How do I monitor Celery tasks?**
-
-A: Use Flower:
-
-```bash
-pip install flower
-uv run celery -A app.core.celery:celery_app flower
-# Visit http://localhost:5555
-```
-
-### Deployment Questions
-
-**Q: How do I deploy to production?**
-
-A: See the [Deployment Guide](deployment.md) for detailed instructions. Quick overview:
-
-1. Update `secret/.env.production` with production credentials
-2. Use Docker Compose or deploy to cloud platforms
-3. Set up proper monitoring and logging
-4. Use a reverse proxy (Nginx, Traefik)
-
-**Q: Should I use Docker in production?**
-
-A: Docker is recommended for production as it ensures consistency across environments and simplifies deployment.
-
-**Q: How do I handle database migrations in production?**
-
-```bash
-# Run migrations before deploying new code
-uv run alembic upgrade head
-
-# Or in Docker
-docker-compose exec api alembic upgrade head
-```
-
-### Email Questions (Complete Auth)
-
-**Q: Email sending is slow. How do I fix it?**
-
-A: Use Celery to send emails asynchronously. The generated code already does this for Complete Auth.
-
-**Q: Can I use a different email provider?**
-
-A: Yes, update SMTP settings in `.env`:
-
-```ini
-EMAIL_HOST=smtp.sendgrid.net
-EMAIL_PORT=587
-EMAIL_HOST_USER=apikey
-EMAIL_HOST_PASSWORD=your-api-key
-```
-
-**Q: How do I customize email templates?**
-
-A: Edit HTML files in `static/email_template/`:
-- `verification_email.html`
-- `reset_password_email.html`
-
-### Testing Questions
-
-**Q: How do I test endpoints that require authentication?**
-
-```python
-# tests/test_auth.py
-def test_protected_endpoint(client, auth_headers):
-    response = client.get("/api/v1/users/me", headers=auth_headers)
-    assert response.status_code == 200
-```
-
-**Q: How do I mock external services in tests?**
+Don't call real external services in tests:
 
 ```python
 from unittest.mock import patch
 
-@patch('app.utils.email.email_service.send_email')
-def test_registration(mock_send_email, client):
-    mock_send_email.return_value = None
-    response = client.post("/api/v1/auth/register", json={...})
-    assert response.status_code == 201
+@pytest.mark.asyncio
+async def test_send_email():
+    with patch('app.utils.email.email_service.send_email') as mock:
+        mock.return_value = None
+        # Test code that sends email
 ```
 
-## Troubleshooting Guide
+## Logging
 
-### Issue: "Module not found" errors
+### Use the Logger
 
-**Solution**:
-```bash
-# Reinstall dependencies
-uv sync --reinstall
+The generated project includes Loguru configuration:
 
-# Or with pip
-pip install -e . --force-reinstall
-```
-
-### Issue: Database connection refused
-
-**Solution**:
-```bash
-# Check if database is running
-# PostgreSQL
-pg_isready
-
-# MySQL
-mysqladmin ping
-
-# Check connection string
-cat secret/.env.development | grep DATABASE_URL
-```
-
-### Issue: Alembic can't detect model changes
-
-**Solution**:
 ```python
-# Make sure models are imported in alembic/env.py
-from app.models.user import User
-from app.models.post import Post  # Add your models here
+from app.core.logger import logger_manager
+
+logger = logger_manager.get_logger(__name__)
+
+logger.info("User registered", user_id=user.id)
+logger.error("Database error", error=str(e))
 ```
 
-### Issue: Celery tasks not executing
+### Log Levels
 
-**Solution**:
-```bash
-# 1. Check if Redis is running
-redis-cli ping
+- `DEBUG`: Detailed information for debugging
+- `INFO`: General operational events
+- `WARNING`: Something unexpected but not critical
+- `ERROR`: Something failed
 
-# 2. Check if worker is running
-uv run celery -A app.core.celery:celery_app inspect active
+## Code Quality
 
-# 3. Check task registration
-uv run celery -A app.core.celery:celery_app inspect registered
+### Type Hints
 
-# 4. Restart worker
-# Stop worker (Ctrl+C) and start again
-uv run celery -A app.core.celery:celery_app worker --loglevel=info
-```
+Use type hints throughout:
 
-### Issue: CORS errors in browser
-
-**Solution**:
-```ini
-# Update .env with your frontend URL
-CORS_ALLOWED_ORIGINS=http://localhost:3000
-
-# Restart the server
-```
-
-### Issue: Email not sending (Complete Auth)
-
-**Solution**:
-1. Check SMTP credentials in `.env`
-2. Test SMTP connection:
 ```python
-from app.utils.email import email_service
-email_service.test_connection()
+async def get_user(db: AsyncSession, user_id: int) -> Optional[User]:
+    return await db.get(User, user_id)
 ```
-3. Check logs: `logs/app_development.log`
-4. For Gmail, use App Password, not regular password
 
-## Getting Help
+### Development Tools
 
-If you're still stuck:
+If dev_tools is enabled, use them:
 
-1. **Check Documentation**: https://ningfastforge.readthedocs.io/
-2. **Search Issues**: https://github.com/ning3739/forge/issues
-3. **Create Issue**: Provide error messages, logs, and configuration
-4. **Community**: Ask in GitHub Discussions
+```bash
+# Format code
+black .
 
-## Contributing
+# Lint code
+ruff check .
 
-Found a bug or have a feature request?
-
-1. Check existing issues: https://github.com/ning3739/forge/issues
-2. Create a new issue with details
-3. Submit a pull request if you'd like to contribute code
+# Type check
+mypy app/
+```

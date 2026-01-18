@@ -1,297 +1,295 @@
-# Creating Custom Generators
+# Creating Generators
 
-This guide walks you through creating custom generators for Forge. You'll learn how to extend Forge with your own code generation logic.
+Generators are the core building blocks of Forge. Each generator is responsible for creating specific files in the generated project.
 
-## Prerequisites
+## How Generators Work
 
-- Understanding of Python and FastAPI
-- Familiarity with Forge's architecture
-- Knowledge of the `@Generator` decorator
+1. Generators are Python classes decorated with `@Generator`
+2. The decorator registers them in a global registry
+3. `GeneratorOrchestrator` discovers all registered generators
+4. Generators are filtered based on configuration (e.g., skip Redis generator if Redis is disabled)
+5. Generators are sorted by priority and dependencies
+6. Each generator's `generate()` method is called in order
 
-## Quick Start
+## Generator Structure
 
-### 1. Create Generator File
-
-Create a new file in `core/generators/templates/`:
-
-```python
-# core/generators/templates/my_feature.py
-
-from core.decorators.generator import Generator
-from core.generators.templates.base import BaseTemplateGenerator
-from core.config_reader import ConfigReader
-
-@Generator(
-    category="feature",
-    priority=55,
-    requires=[],
-    enabled_when=None  # Always enabled
-)
-class MyFeatureGenerator(BaseTemplateGenerator):
-    """Generate my custom feature"""
-    
-    def __init__(self, config: ConfigReader):
-        super().__init__(config)
-        self.project_name = config.project_name()
-    
-    def generate(self):
-        """Generate feature files"""
-        content = self._generate_content()
-        self._write_file("app/features/my_feature.py", content)
-    
-    def _generate_content(self) -> str:
-        return '''"""My custom feature"""
-
-def my_function():
-    return "Hello from my feature!"
-'''
-```
-
-### 2. Import Generator
-
-Add import to `core/generators/templates/__init__.py`:
+A generator consists of:
 
 ```python
-from core.generators.templates.my_feature import MyFeatureGenerator
-```
-
-### 3. Test Generator
-
-```python
-from core.config_reader import ConfigReader
-from core.generators.orchestrator import GeneratorOrchestrator
-
-config = ConfigReader({"project_name": "test_api"})
-orchestrator = GeneratorOrchestrator(config)
-orchestrator.run()
-```
-
-## Step-by-Step Tutorial
-
-### Example: Blog Post Feature
-
-Let's create a complete blog post feature with model, schema, CRUD, and router.
-
-#### Step 1: Create Model Generator
-
-```python
-# core/generators/templates/models/post.py
-
-from core.decorators.generator import Generator
+from core.decorators import Generator
 from core.generators.templates.base import BaseTemplateGenerator
 
-@Generator(
-    category="model",
-    priority=37,
-    requires=["DatabaseGenerator"],
-    enabled_when=None
-)
-class PostModelGenerator(BaseTemplateGenerator):
-    """Generate Post model"""
-    
-    def generate(self):
-        self._ensure_directory("app/models")
-        
-        if self.config.orm() == "sqlmodel":
-            content = self._generate_sqlmodel()
-        else:
-            content = self._generate_sqlalchemy()
-        
-        self._write_file("app/models/post.py", content)
-    
-    def _generate_sqlmodel(self) -> str:
-        return '''from sqlmodel import Field, SQLModel, Relationship
-from datetime import datetime
-from typing import Optional
-
-class Post(SQLModel, table=True):
-    """Blog post model"""
-    __tablename__ = "posts"
-    
-    id: Optional[int] = Field(default=None, primary_key=True)
-    title: str = Field(max_length=200, index=True)
-    content: str
-    slug: str = Field(unique=True, index=True)
-    published: bool = Field(default=False)
-    user_id: int = Field(foreign_key="users.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    
-    # Relationships
-    author: Optional["User"] = Relationship(back_populates="posts")
-'''
-    
-    def _generate_sqlalchemy(self) -> str:
-        # Similar implementation for SQLAlchemy
-        pass
-```
-
-#### Step 2: Create Schema Generator
-
-```python
-# core/generators/templates/schemas/post.py
-
-from core.decorators.generator import Generator
-from core.generators.templates.base import BaseTemplateGenerator
-
-@Generator(
-    category="model",
-    priority=38,
-    requires=["PostModelGenerator"],
-    enabled_when=None
-)
-class PostSchemaGenerator(BaseTemplateGenerator):
-    """Generate Post schemas"""
-    
-    def generate(self):
-        self._ensure_directory("app/schemas")
-        content = self._generate_content()
-        self._write_file("app/schemas/post.py", content)
-    
-    def _generate_content(self) -> str:
-        return '''from pydantic import BaseModel, Field
-from datetime import datetime
-
-class PostBase(BaseModel):
-    """Base post schema"""
-    title: str = Field(..., max_length=200)
-    content: str
-    slug: str
-    published: bool = False
-
-class PostCreate(PostBase):
-    """Schema for creating post"""
-    pass
-
-class PostUpdate(BaseModel):
-    """Schema for updating post"""
-    title: str | None = None
-    content: str | None = None
-    slug: str | None = None
-    published: bool | None = None
-
-class PostResponse(PostBase):
-    """Schema for post response"""
-    id: int
-    user_id: int
-    created_at: datetime
-    updated_at: datetime
-    
-    class Config:
-        from_attributes = True
-'''
-```
-
-#### Step 3: Create CRUD Generator
-
-```python
-# core/generators/templates/crud/post.py
-
-from core.decorators.generator import Generator
-from core.generators.templates.base import BaseTemplateGenerator
-
-@Generator(
-    category="service",
-    priority=52,
-    requires=["PostModelGenerator", "PostSchemaGenerator"],
-    enabled_when=None
-)
-class PostCRUDGenerator(BaseTemplateGenerator):
-    """Generate Post CRUD operations"""
-    
-    def generate(self):
-        self._ensure_directory("app/crud")
-        content = self._generate_content()
-        self._write_file("app/crud/post.py", content)
-    
-    def _generate_content(self) -> str:
-        return '''from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from app.models.post import Post
-from app.schemas.post import PostCreate, PostUpdate
-
-async def create_post(
-    db: AsyncSession,
-    post_data: PostCreate,
-    user_id: int
-) -> Post:
-    """Create new post"""
-    post = Post(**post_data.dict(), user_id=user_id)
-    db.add(post)
-    await db.commit()
-    await db.refresh(post)
-    return post
-
-async def get_post(db: AsyncSession, post_id: int) -> Post | None:
-    """Get post by ID"""
-    result = await db.execute(
-        select(Post).where(Post.id == post_id)
-    )
-    return result.scalar_one_or_none()
-
-async def get_posts(
-    db: AsyncSession,
-    skip: int = 0,
-    limit: int = 100
-) -> list[Post]:
-    """Get all posts"""
-    result = await db.execute(
-        select(Post).offset(skip).limit(limit)
-    )
-    return result.scalars().all()
-
-async def update_post(
-    db: AsyncSession,
-    post: Post,
-    post_data: PostUpdate
-) -> Post:
-    """Update post"""
-    for field, value in post_data.dict(exclude_unset=True).items():
-        setattr(post, field, value)
-    
-    await db.commit()
-    await db.refresh(post)
-    return post
-
-async def delete_post(db: AsyncSession, post: Post) -> None:
-    """Delete post"""
-    await db.delete(post)
-    await db.commit()
-'''
-```
-
-#### Step 4: Create Router Generator
-
-```python
-# core/generators/templates/routers/post.py
-
-from core.decorators.generator import Generator
-from core.generators.templates.base import BaseTemplateGenerator
 
 @Generator(
     category="router",
-    priority=62,
-    requires=["PostCRUDGenerator"],
-    enabled_when=lambda c: c.has_auth()  # Requires authentication
+    priority=80,
+    requires=["UserModelGenerator", "UserSchemaGenerator"],
+    enabled_when=lambda c: c.has_auth(),
+    description="Generate user router (app/routers/v1/users.py)"
+)
+class UserRouterGenerator(BaseTemplateGenerator):
+    """User router generator"""
+    
+    def generate(self) -> None:
+        """Generate the user router file"""
+        # Implementation here
+        pass
+```
+
+## @Generator Decorator Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `category` | str | Yes | Generator category for organization |
+| `priority` | int | Yes | Execution order (lower = earlier) |
+| `requires` | list[str] | No | Generator class names that must run first |
+| `enabled_when` | callable | No | Function that returns True if generator should run |
+| `description` | str | No | Human-readable description |
+
+### Category
+
+Categories help organize generators logically:
+
+| Category | Priority Range | Purpose |
+|----------|---------------|---------|
+| `config` | 1-10 | Configuration files (pyproject.toml, .env) |
+| `app_config` | 11-20 | Application configuration modules |
+| `database` | 21-30 | Database connection and setup |
+| `model` | 31-50 | Database models |
+| `schema` | 51-60 | Pydantic schemas |
+| `crud` | 61-70 | CRUD operations |
+| `service` | 71-80 | Business logic services |
+| `router` | 81-90 | API routes |
+| `email` | 71-80 | Email service |
+| `task` | 55-65 | Celery tasks |
+| `test` | 100-115 | Test files |
+| `deployment` | 100-110 | Docker and deployment |
+| `migration` | 120 | Database migrations |
+
+### Priority
+
+Priority determines execution order within and across categories. Lower numbers execute first.
+
+Guidelines:
+- Configuration files: 1-10
+- Core infrastructure: 11-30
+- Data layer (models, schemas): 31-60
+- Business logic: 61-80
+- API layer: 81-90
+- Tests and deployment: 100+
+
+### Requires
+
+The `requires` parameter lists generator class names that must complete before this generator runs:
+
+```python
+@Generator(
+    category="router",
+    priority=80,
+    requires=["UserModelGenerator", "UserSchemaGenerator", "UserCRUDGenerator"]
+)
+class UserRouterGenerator(BaseTemplateGenerator):
+    ...
+```
+
+The orchestrator uses this to build a dependency graph and ensure correct execution order.
+
+### enabled_when
+
+A function that receives a `ConfigReader` instance and returns `True` if the generator should run:
+
+```python
+@Generator(
+    category="router",
+    priority=80,
+    enabled_when=lambda c: c.has_auth()  # Only run if auth is enabled
+)
+class AuthRouterGenerator(BaseTemplateGenerator):
+    ...
+```
+
+Common conditions:
+- `lambda c: c.has_auth()` - Authentication enabled
+- `lambda c: c.has_redis()` - Redis enabled
+- `lambda c: c.has_celery()` - Celery enabled
+- `lambda c: c.has_testing()` - Testing enabled
+- `lambda c: c.has_docker()` - Docker enabled
+- `lambda c: c.get_auth_type() == "complete"` - Complete auth mode
+- `lambda c: c.get_database_type() == "PostgreSQL"` - Specific database
+
+## BaseTemplateGenerator
+
+All generators inherit from `BaseTemplateGenerator`:
+
+```python
+class BaseTemplateGenerator:
+    def __init__(self, project_path: Path, config_reader: ConfigReader):
+        self.project_path = Path(project_path)
+        self.config_reader = config_reader
+        self.file_ops = FileOperations(base_path=project_path)
+    
+    def generate(self) -> None:
+        raise NotImplementedError("Subclasses must implement generate()")
+```
+
+### Available Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `self.project_path` | Path | Root directory of generated project |
+| `self.config_reader` | ConfigReader | Access to project configuration |
+| `self.file_ops` | FileOperations | File writing utilities |
+
+## Using ConfigReader
+
+Query project configuration:
+
+```python
+def generate(self) -> None:
+    # Project info
+    name = self.config_reader.get_project_name()
+    
+    # Database
+    db_type = self.config_reader.get_database_type()  # PostgreSQL, MySQL, SQLite
+    orm_type = self.config_reader.get_orm_type()      # SQLModel, SQLAlchemy
+    
+    # Authentication
+    auth_type = self.config_reader.get_auth_type()    # basic, complete
+    
+    # Feature flags
+    if self.config_reader.has_auth():
+        # Generate auth-related code
+    
+    if self.config_reader.has_redis():
+        # Generate Redis-related code
+    
+    if self.config_reader.has_celery():
+        # Generate Celery-related code
+    
+    if self.config_reader.has_refresh_token():
+        # Generate refresh token code
+```
+
+## Using FileOperations
+
+Write files to the generated project:
+
+### Create a File
+
+```python
+self.file_ops.create_file(
+    file_path="app/routers/v1/posts.py",
+    content="# Posts router\n...",
+    overwrite=True
+)
+```
+
+### Create a Python File
+
+Automatically formats with docstring and imports:
+
+```python
+self.file_ops.create_python_file(
+    file_path="app/services/post.py",
+    docstring="Post service module",
+    imports=[
+        "from typing import Optional, List",
+        "from sqlalchemy.ext.asyncio import AsyncSession",
+        "from app.models.post import Post",
+    ],
+    content='''class PostService:
+    """Post service class"""
+    
+    async def create(self, db: AsyncSession, data: dict) -> Post:
+        ...
+''',
+    overwrite=True
+)
+```
+
+### Create JSON File
+
+```python
+self.file_ops.create_json_file(
+    file_path="config.json",
+    data={"key": "value"},
+    indent=2,
+    overwrite=True
+)
+```
+
+### Create Markdown File
+
+```python
+self.file_ops.create_markdown_file(
+    file_path="README.md",
+    title="My Project",
+    content="Project description...",
+    overwrite=True
+)
+```
+
+## Complete Example
+
+Here's a complete generator that creates a posts router:
+
+```python
+"""Posts router generator"""
+from core.decorators import Generator
+from core.generators.templates.base import BaseTemplateGenerator
+
+
+@Generator(
+    category="router",
+    priority=85,
+    requires=["PostModelGenerator", "PostSchemaGenerator", "PostCRUDGenerator"],
+    enabled_when=lambda c: c.config.get("features", {}).get("posts", False),
+    description="Generate posts router (app/routers/v1/posts.py)"
 )
 class PostRouterGenerator(BaseTemplateGenerator):
-    """Generate Post router"""
+    """Posts router generator"""
     
-    def generate(self):
-        self._ensure_directory("app/routers")
-        content = self._generate_content()
-        self._write_file("app/routers/post.py", content)
-    
-    def _generate_content(self) -> str:
-        return '''from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+    def generate(self) -> None:
+        """Generate the posts router file"""
+        imports = [
+            "from fastapi import APIRouter, Depends, HTTPException, status",
+            "from sqlalchemy.ext.asyncio import AsyncSession",
+            "from typing import List",
+            "",
+            "from app.core.database import get_db",
+            "from app.core.deps import get_current_user",
+            "from app.models.user import User",
+            "from app.schemas.post import PostCreate, PostUpdate, PostResponse",
+            "from app.crud.post import post_crud",
+        ]
+        
+        content = '''router = APIRouter(prefix="/posts", tags=["Posts"])
 
-from app.core.deps import get_db, get_current_user
-from app.models.user import User
-from app.schemas.post import PostCreate, PostUpdate, PostResponse
-from app.crud import post as post_crud
 
-router = APIRouter(prefix="/posts", tags=["posts"])
+@router.get("/", response_model=List[PostResponse])
+async def list_posts(
+    skip: int = 0,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db)
+):
+    """List all posts"""
+    return await post_crud.get_all(db, skip=skip, limit=limit)
+
+
+@router.get("/{post_id}", response_model=PostResponse)
+async def get_post(
+    post_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Get a specific post"""
+    post = await post_crud.get_by_id(db, post_id)
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found"
+        )
+    return post
+
 
 @router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 async def create_post(
@@ -299,33 +297,9 @@ async def create_post(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Create new post"""
-    post = await post_crud.create_post(db, post_data, current_user.id)
-    return post
+    """Create a new post"""
+    return await post_crud.create(db, post_data, author_id=current_user.id)
 
-@router.get("/", response_model=list[PostResponse])
-async def get_posts(
-    skip: int = 0,
-    limit: int = 100,
-    db: AsyncSession = Depends(get_db)
-):
-    """Get all posts"""
-    posts = await post_crud.get_posts(db, skip, limit)
-    return posts
-
-@router.get("/{post_id}", response_model=PostResponse)
-async def get_post(
-    post_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    """Get post by ID"""
-    post = await post_crud.get_post(db, post_id)
-    if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found"
-        )
-    return post
 
 @router.put("/{post_id}", response_model=PostResponse)
 async def update_post(
@@ -334,22 +308,20 @@ async def update_post(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Update post"""
-    post = await post_crud.get_post(db, post_id)
+    """Update a post"""
+    post = await post_crud.get_by_id(db, post_id)
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found"
         )
-    
-    if post.user_id != current_user.id:
+    if post.author_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to update this post"
         )
-    
-    post = await post_crud.update_post(db, post, post_data)
-    return post
+    return await post_crud.update(db, post_id, post_data)
+
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(
@@ -357,264 +329,46 @@ async def delete_post(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Delete post"""
-    post = await post_crud.get_post(db, post_id)
+    """Delete a post"""
+    post = await post_crud.get_by_id(db, post_id)
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found"
         )
-    
-    if post.user_id != current_user.id:
+    if post.author_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to delete this post"
         )
-    
-    await post_crud.delete_post(db, post)
+    await post_crud.delete(db, post_id)
 '''
-```
-
-#### Step 5: Register Router in Main
-
-```python
-# core/generators/templates/app/main.py (modify existing generator)
-
-# Add to router registration section:
-if config.has_auth():  # Only if auth enabled
-    from app.routers import post
-    app.include_router(post.router, prefix="/api/v1")
-```
-
-## Advanced Patterns
-
-### Configuration-Driven Generation
-
-```python
-@Generator(category="feature", priority=55)
-class ConfigurableGenerator(BaseTemplateGenerator):
-    def generate(self):
-        # Different output based on configuration
-        if self.config.database() == "postgresql":
-            self._generate_postgres_specific()
-        elif self.config.database() == "mysql":
-            self._generate_mysql_specific()
-        else:
-            self._generate_sqlite_specific()
-```
-
-### Template-Based Generation
-
-```python
-from string import Template
-
-@Generator(category="feature", priority=55)
-class TemplateBasedGenerator(BaseTemplateGenerator):
-    def generate(self):
-        template = Template('''
-from fastapi import APIRouter
-
-router = APIRouter(prefix="/$prefix", tags=["$tag"])
-
-@router.get("/")
-async def get_$resource():
-    return {"message": "Hello from $resource!"}
-''')
         
-        content = template.substitute(
-            prefix="items",
-            tag="items",
-            resource="items"
+        self.file_ops.create_python_file(
+            file_path="app/routers/v1/posts.py",
+            docstring="Posts API router",
+            imports=imports,
+            content=content,
+            overwrite=True
         )
-        
-        self._write_file("app/routers/items.py", content)
 ```
 
-### Multi-File Generation
+## Generator File Locations
 
-```python
-@Generator(category="feature", priority=55)
-class MultiFileGenerator(BaseTemplateGenerator):
-    def generate(self):
-        # Generate multiple related files
-        self._generate_model()
-        self._generate_schema()
-        self._generate_crud()
-        self._generate_router()
-    
-    def _generate_model(self):
-        self._write_file("app/models/item.py", "# Model")
-    
-    def _generate_schema(self):
-        self._write_file("app/schemas/item.py", "# Schema")
-    
-    def _generate_crud(self):
-        self._write_file("app/crud/item.py", "# CRUD")
-    
-    def _generate_router(self):
-        self._write_file("app/routers/item.py", "# Router")
-```
+Place generators in the appropriate directory:
 
-## Best Practices
+| Type | Location |
+|------|----------|
+| Config files | `core/generators/configs/` |
+| Deployment | `core/generators/deployment/` |
+| App modules | `core/generators/templates/app/` |
+| Database | `core/generators/templates/database/` |
+| Models | `core/generators/templates/models/` |
+| Schemas | `core/generators/templates/schemas/` |
+| CRUD | `core/generators/templates/crud/` |
+| Services | `core/generators/templates/services/` |
+| Routers | `core/generators/templates/routers/` |
+| Tasks | `core/generators/templates/tasks/` |
+| Tests | `core/generators/templates/tests/` |
 
-### 1. Single Responsibility
-
-Each generator should handle one logical unit:
-
-```python
-# Good: Separate generators
-class UserModelGenerator(BaseTemplateGenerator):
-    pass
-
-class UserSchemaGenerator(BaseTemplateGenerator):
-    pass
-
-# Bad: One generator does everything
-class UserEverythingGenerator(BaseTemplateGenerator):
-    pass
-```
-
-### 2. Clear Dependencies
-
-```python
-@Generator(
-    category="router",
-    priority=60,
-    requires=[
-        "UserModelGenerator",
-        "UserSchemaGenerator",
-        "UserCRUDGenerator"
-    ]
-)
-class UserRouterGenerator(BaseTemplateGenerator):
-    pass
-```
-
-### 3. Conditional Generation
-
-```python
-@Generator(
-    category="feature",
-    priority=55,
-    enabled_when=lambda c: c.get("enable_my_feature", False)
-)
-class OptionalFeatureGenerator(BaseTemplateGenerator):
-    pass
-```
-
-### 4. Error Handling
-
-```python
-def generate(self):
-    try:
-        content = self._generate_content()
-        self._write_file("app/feature.py", content)
-    except Exception as e:
-        logger.error(f"Failed to generate feature: {e}")
-        raise
-```
-
-### 5. Testing
-
-```python
-def test_my_generator():
-    config = ConfigReader({"project_name": "test"})
-    generator = MyGenerator(config)
-    generator.generate()
-    
-    assert os.path.exists("test/app/feature.py")
-    with open("test/app/feature.py") as f:
-        content = f.read()
-        assert "expected_content" in content
-```
-
-## Common Patterns
-
-### Adding Configuration Options
-
-```python
-# 1. Add to config collection (commands/init.py)
-enable_feature = questionary.confirm(
-    "Enable my feature?"
-).ask()
-
-config["enable_my_feature"] = enable_feature
-
-# 2. Add ConfigReader method (core/config_reader.py)
-def enable_my_feature(self) -> bool:
-    return self.config.get("enable_my_feature", False)
-
-# 3. Use in generator
-@Generator(
-    enabled_when=lambda c: c.enable_my_feature()
-)
-class MyFeatureGenerator(BaseTemplateGenerator):
-    pass
-```
-
-### Modifying Existing Files
-
-```python
-def generate(self):
-    # Read existing file
-    with open("app/main.py", "r") as f:
-        content = f.read()
-    
-    # Modify content
-    import_line = "from app.routers import my_router\n"
-    if import_line not in content:
-        # Add import after other imports
-        content = content.replace(
-            "from app.core import config\n",
-            f"from app.core import config\n{import_line}"
-        )
-    
-    # Write back
-    with open("app/main.py", "w") as f:
-        f.write(content)
-```
-
-## Troubleshooting
-
-### Generator Not Running
-
-1. Check if imported in `__init__.py`
-2. Verify `enabled_when` condition
-3. Check dependencies are satisfied
-4. Verify priority and category
-
-### Circular Dependencies
-
-```python
-# Bad
-@Generator(requires=["B"])
-class A(BaseTemplateGenerator):
-    pass
-
-@Generator(requires=["A"])
-class B(BaseTemplateGenerator):
-    pass
-
-# Good
-@Generator(requires=[])
-class A(BaseTemplateGenerator):
-    pass
-
-@Generator(requires=["A"])
-class B(BaseTemplateGenerator):
-    pass
-```
-
-### File Not Created
-
-1. Check directory exists (use `_ensure_directory`)
-2. Verify file path is correct
-3. Check permissions
-4. Look for exceptions in logs
-
-## See Also
-
-- [Generator Decorator API](../api/generator-decorator.md) - Decorator reference
-- [Orchestrator API](../api/orchestrator.md) - Execution system
-- [ConfigReader API](../api/config-reader.md) - Configuration access
-- [Generator System Architecture](../architecture/generator-system.md) - System design
+Generators are automatically discovered from these locations—no manual registration needed.

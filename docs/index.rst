@@ -1,89 +1,35 @@
 .. image:: ../assets/logo.svg
    :align: center
-   :width: 480px
+   :width: 400px
    :alt: Forge Logo
 
-|
+.. raw:: html
 
-.. image:: https://badge.fury.io/py/ningfastforge.svg
-   :target: https://badge.fury.io/py/ningfastforge
-   :alt: PyPI version
-   :align: center
-
-.. image:: https://img.shields.io/pypi/pyversions/ningfastforge.svg
-   :target: https://pypi.org/project/ningfastforge/
-   :alt: Python Versions
-   :align: center
-
-.. image:: https://static.pepy.tech/badge/ningfastforge
-   :target: https://pepy.tech/project/ningfastforge
-   :alt: Downloads
-   :align: center
-
-.. image:: https://img.shields.io/badge/License-MIT-yellow.svg
-   :target: https://opensource.org/licenses/MIT
-   :alt: License: MIT
-   :align: center
+   <p align="center">
+     <a href="https://badge.fury.io/py/ningfastforge"><img src="https://badge.fury.io/py/ningfastforge.svg" alt="PyPI version"></a>
+     <a href="https://pypi.org/project/ningfastforge/"><img src="https://img.shields.io/pypi/pyversions/ningfastforge.svg" alt="Python Versions"></a>
+     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+   </p>
 
 ----
 
-Forge is a powerful command-line tool that helps you quickly bootstrap **production-ready FastAPI projects** with best practices, intelligent defaults, and a beautiful interactive interface.
-
-✨ Key Features
----------------
-
-- 🎨 **Beautiful Interactive UI** - Stunning terminal interface with gradient colors and smooth animations
-- 🚀 **Smart Presets** - Carefully curated presets for testing, dev tools, deployment, and monitoring
-- 🔐 **Authentication Ready** - Built-in support for JWT authentication (Basic & Complete)
-- 🗄️ **Database Flexibility** - Support for PostgreSQL, MySQL, and SQLite with SQLModel/SQLAlchemy
-- 🔴 **Redis Integration** - Built-in Redis support for caching, sessions, and message queues
-- 📋 **Background Tasks** - Celery integration with Redis broker for async task processing
-- 💾 **Database Backup** - Automated database backup tasks supporting all database types
-- 📦 **Modular Architecture** - Choose only the features you need
-- 🧪 **Testing Built-in** - Pre-configured pytest with async support and coverage
-- 🐳 **Docker Ready** - Production-ready Docker and Docker Compose configurations
-- 🔍 **Type Safe** - Full type hints throughout generated code
-- ⚡ **Async First** - Optimized for FastAPI's async capabilities
-
-Quick Start
------------
-
-Get started with Forge in just a few commands:
+Forge is a CLI tool that generates production-ready FastAPI projects. It collects your preferences through an interactive terminal interface, saves them to a configuration file, then generates a complete project structure with all the boilerplate code you need.
 
 .. code-block:: bash
 
-   # Install from PyPI
    pip install ningfastforge
-
-   # Create your first project (interactive mode)
    forge init
 
-   # Navigate to project and run
-   cd my-project
-   uv sync
-   uv run uvicorn app.main:app --reload
+Features
+--------
 
-Visit ``http://127.0.0.1:8000/docs`` to see your API documentation!
-
-What You Get
-------------
-
-When you create a project with Forge, you get:
-
-- ✅ Fully structured FastAPI application
-- ✅ Database models and migrations (Alembic)
-- ✅ JWT authentication with user management
-- ✅ CRUD operations and API routers
-- ✅ Redis caching and session management
-- ✅ Celery background tasks and scheduling
-- ✅ Docker and Docker Compose configuration
-- ✅ Comprehensive test suite with pytest
-- ✅ Development tools (Black, Ruff)
-- ✅ Environment configuration files
-- ✅ Complete documentation and examples
-
-Table of Contents
------------------
+- **Database Support**: PostgreSQL, MySQL, SQLite with SQLModel or SQLAlchemy ORM
+- **Authentication**: JWT-based auth with two modes (basic or complete with email verification)
+- **Caching**: Redis integration for caching and session management
+- **Background Tasks**: Celery with Redis broker for async task processing
+- **Testing**: Pre-configured pytest with async support
+- **Deployment**: Docker and Docker Compose configurations
+- **Migrations**: Alembic database migrations
 
 .. toctree::
    :maxdepth: 2
@@ -97,7 +43,6 @@ Table of Contents
    :maxdepth: 2
    :caption: User Guide
 
-   user-guide/cli-commands
    user-guide/configuration
    user-guide/database
    user-guide/authentication
@@ -126,26 +71,19 @@ Table of Contents
    :maxdepth: 2
    :caption: Developer Guide
 
+   developer-guide/development-setup
    developer-guide/creating-generators
+   developer-guide/adding-features
 
 .. toctree::
    :maxdepth: 1
-   :caption: Additional Information
+   :caption: Additional
 
    changelog
 
-Community and Support
----------------------
+Links
+-----
 
 - **GitHub**: `ning3739/forge <https://github.com/ning3739/forge>`_
 - **PyPI**: `ningfastforge <https://pypi.org/project/ningfastforge/>`_
-- **Issues**: `Report bugs or request features <https://github.com/ning3739/forge/issues>`_
-
-License
--------
-
-Forge is released under the `MIT License <https://opensource.org/licenses/MIT>`_.
-
-----
-
-Made with ❤️ for the FastAPI community
+- **Issues**: `Report bugs <https://github.com/ning3739/forge/issues>`_

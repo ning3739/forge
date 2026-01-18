@@ -5,13 +5,15 @@
 
 import os
 import sys
+from datetime import datetime
+
 sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Forge'
-copyright = '2026, ning3739'
+copyright = f'{datetime.now().year}, ning3739'
 author = 'ning3739'
 release = '0.1.8.5'
 version = '0.1.8'
@@ -83,9 +85,9 @@ html_theme_options = {
     'titles_only': False
 }
 
-# Logo and favicon
-html_logo = '../assets/logo.svg'
-html_favicon = '../assets/favicon.ico'
+# Use ReadTheDocs default logo and favicon
+# html_logo = '../assets/logo.svg'
+# html_favicon = '../assets/favicon.ico'
 
 # The master toctree document.
 master_doc = 'index'

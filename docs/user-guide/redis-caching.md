@@ -1,506 +1,258 @@
-# Redis Caching Guide
+# Redis Caching
 
-Forge provides integrated Redis support for caching, sessions, and queues. This guide covers setup, usage, and best practices.
-
-## Overview
-
-Redis is an in-memory data store that provides:
-- **Caching**: Store frequently accessed data for fast retrieval
-- **Session Storage**: Manage user sessions across multiple servers
-- **Message Queues**: Handle background job queues (used by Celery)
-- **Rate Limiting**: Implement API rate limiting
+When Redis is enabled, Forge generates a Redis connection manager that supports both async operations (for FastAPI) and sync operations (for Celery tasks).
 
 ## Configuration
 
-Enable Redis during project initialization:
+Enable Redis during project creation, then configure via environment variables:
 
 ```bash
-forge init
-# Select "Yes" when asked about Redis
+REDIS_CONNECTION_URL=redis://localhost:6379
+REDIS_POOL_SIZE=5
+REDIS_SOCKET_TIMEOUT=10
+REDIS_DEFAULT_TTL=3600  # Default expiration in seconds
 ```
 
-Or in `.forge/config.json`:
+For Docker deployments, the URL changes to use the service name:
 
-```json
-{
-  "features": {
-    "redis": {
-      "enabled": true,
-      "features": ["caching", "sessions", "queues"]
-    }
-  }
-}
+```bash
+REDIS_CONNECTION_URL=redis://redis:6379
 ```
 
-## Generated Components
+## RedisManager
 
-### Redis Manager
+The `RedisManager` class in `app/core/redis.py` provides a unified interface for Redis operations.
 
-The generated `app/core/redis.py` provides both async and sync Redis clients:
+### Initialization
+
+Redis is initialized during application startup in `main.py`:
+
+```python
+async def lifespan(_app: FastAPI):
+    # Startup
+    await redis_manager.initialize_async()
+    
+    yield
+    
+    # Shutdown
+    await redis_manager.close()
+```
+
+### Async Operations (FastAPI)
+
+Use async methods in your FastAPI routes:
 
 ```python
 from app.core.redis import redis_manager
 
-# Async methods (for FastAPI endpoints)
-await redis_manager.set_async("key", "value", ex=3600)
-value = await redis_manager.get_async("key")
-await redis_manager.delete_async("key")
-
-# Sync methods (for Celery tasks)
-redis_manager.set_sync("key", "value", ex=3600)
-value = redis_manager.get_sync("key")
-redis_manager.delete_sync("key")
+@router.get("/cached-data")
+async def get_cached_data(key: str):
+    # Get from cache
+    cached = await redis_manager.get_async(key)
+    if cached:
+        return {"data": cached, "source": "cache"}
+    
+    # Compute and cache
+    data = expensive_computation()
+    await redis_manager.set_async(key, data, ex=3600)
+    return {"data": data, "source": "computed"}
 ```
 
-### Configuration Settings
+### Sync Operations (Celery)
 
-Redis settings in `app/core/config/redis.py`:
+Use sync methods in Celery tasks:
 
 ```python
-class RedisSettings(BaseSettings):
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
-    REDIS_PASSWORD: str = ""
-    REDIS_DB: int = 0
-    REDIS_CONNECTION_URL: str = "redis://localhost:6379/0"
+from app.core.redis import redis_manager
+
+@celery_app.task
+def process_data(key: str):
+    # Get from cache
+    cached = redis_manager.get_sync(key)
+    if cached:
+        return cached
     
-    # Pool settings
-    REDIS_POOL_SIZE: int = 10
-    REDIS_SOCKET_TIMEOUT: int = 5
-    REDIS_DEFAULT_TTL: int = 3600  # 1 hour
+    # Process and cache
+    result = heavy_processing()
+    redis_manager.set_sync(key, result, ex=3600)
+    return result
 ```
+
+## Available Methods
+
+### Async Methods
+
+| Method | Description |
+|--------|-------------|
+| `get_async(key)` | Get value by key |
+| `set_async(key, value, ex=None)` | Set value with optional TTL |
+| `delete_async(*keys)` | Delete one or more keys |
+| `delete_pattern_async(pattern)` | Delete keys matching pattern |
+| `async_test_connection()` | Test Redis connectivity |
+
+### Sync Methods
+
+| Method | Description |
+|--------|-------------|
+| `get_sync(key)` | Get value by key |
+| `set_sync(key, value, ex=None)` | Set value with optional TTL |
+| `delete_sync(*keys)` | Delete one or more keys |
+| `delete_pattern_sync(pattern)` | Delete keys matching pattern |
+| `sync_test_connection()` | Test Redis connectivity |
 
 ## Common Use Cases
 
-### 1. Caching API Responses
-
-Cache expensive database queries or API calls:
+### Caching API Responses
 
 ```python
-from fastapi import APIRouter, Depends
-from app.core.redis import redis_manager
 import json
+from app.core.redis import redis_manager
 
-router = APIRouter()
-
-@router.get("/users/{user_id}")
-async def get_user(user_id: int):
-    # Try to get from cache
-    cache_key = f"user:{user_id}"
-    cached = await redis_manager.get_async(cache_key)
+async def get_user_profile(user_id: int, db: AsyncSession):
+    cache_key = f"user:profile:{user_id}"
     
+    # Try cache first
+    cached = await redis_manager.get_async(cache_key)
     if cached:
         return json.loads(cached)
     
-    # If not in cache, fetch from database
-    user = await fetch_user_from_db(user_id)
-    
-    # Store in cache for 1 hour
-    await redis_manager.set_async(
-        cache_key,
-        json.dumps(user),
-        ex=3600
-    )
+    # Query database
+    user = await user_crud.get_by_id(db, user_id)
+    if user:
+        # Cache for 5 minutes
+        await redis_manager.set_async(
+            cache_key, 
+            json.dumps(user.dict()), 
+            ex=300
+        )
     
     return user
 ```
 
-### 2. Session Storage
-
-Store user session data:
+### Cache Invalidation
 
 ```python
-from app.core.redis import redis_manager
-import json
-
-async def create_session(user_id: int, session_data: dict):
-    """Create user session"""
-    session_key = f"session:{user_id}"
-    await redis_manager.set_async(
-        session_key,
-        json.dumps(session_data),
-        ex=86400  # 24 hours
-    )
-
-async def get_session(user_id: int) -> dict:
-    """Get user session"""
-    session_key = f"session:{user_id}"
-    data = await redis_manager.get_async(session_key)
-    return json.loads(data) if data else None
-
-async def delete_session(user_id: int):
-    """Delete user session"""
-    session_key = f"session:{user_id}"
-    await redis_manager.delete_async(session_key)
+async def update_user_profile(user_id: int, data: dict, db: AsyncSession):
+    # Update database
+    user = await user_crud.update(db, user_id, data)
+    
+    # Invalidate cache
+    await redis_manager.delete_async(f"user:profile:{user_id}")
+    
+    return user
 ```
 
-### 3. Rate Limiting
-
-Implement API rate limiting with Redis:
+### Pattern-Based Invalidation
 
 ```python
-from app.core.redis import redis_manager
+async def clear_user_caches(user_id: int):
+    # Delete all caches for a user
+    await redis_manager.delete_pattern_async(f"user:{user_id}:*")
+```
+
+### Rate Limiting
+
+```python
 from fastapi import HTTPException
 
-async def check_rate_limit(user_id: int, max_requests: int = 100, window: int = 3600):
-    """Check if user exceeded rate limit"""
+async def check_rate_limit(user_id: int, limit: int = 100, window: int = 60):
     key = f"rate_limit:{user_id}"
     
-    # Get current count
     current = await redis_manager.get_async(key)
-    
-    if current is None:
-        # First request in window
-        await redis_manager.set_async(key, "1", ex=window)
-        return True
-    
-    count = int(current)
-    if count >= max_requests:
-        raise HTTPException(
-            status_code=429,
-            detail="Rate limit exceeded"
-        )
+    if current and int(current) >= limit:
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
     
     # Increment counter
     client = await redis_manager.get_async_client()
-    await client.incr(key)
-    return True
+    pipe = client.pipeline()
+    pipe.incr(key)
+    pipe.expire(key, window)
+    await pipe.execute()
 ```
 
-When Redis is enabled, a rate limiting decorator is automatically generated:
+### Session Storage
 
 ```python
-from app.core.decorators.rate_limit import rate_limit
-
-@router.get("/api/data")
-@rate_limit(max_requests=100, window_seconds=3600)
-async def get_data():
-    return {"data": "value"}
-```
-
-### 4. Caching Decorator
-
-Create a reusable caching decorator:
-
-```python
-from functools import wraps
-from app.core.redis import redis_manager
+import secrets
 import json
-import hashlib
 
-def cache_result(ttl: int = 3600, key_prefix: str = "cache"):
-    """Decorator to cache function results"""
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            # Generate cache key from function name and arguments
-            key_parts = [key_prefix, func.__name__]
-            key_parts.extend(str(arg) for arg in args)
-            key_parts.extend(f"{k}={v}" for k, v in sorted(kwargs.items()))
-            
-            cache_key = hashlib.md5(
-                ":".join(key_parts).encode()
-            ).hexdigest()
-            
-            # Try to get from cache
-            cached = await redis_manager.get_async(cache_key)
-            if cached:
-                return json.loads(cached)
-            
-            # Execute function
-            result = await func(*args, **kwargs)
-            
-            # Store in cache
-            await redis_manager.set_async(
-                cache_key,
-                json.dumps(result),
-                ex=ttl
-            )
-            
-            return result
-        return wrapper
-    return decorator
+async def create_session(user_id: int, data: dict) -> str:
+    session_id = secrets.token_urlsafe(32)
+    session_key = f"session:{session_id}"
+    
+    session_data = {
+        "user_id": user_id,
+        **data
+    }
+    
+    # Store session for 24 hours
+    await redis_manager.set_async(
+        session_key,
+        json.dumps(session_data),
+        ex=86400
+    )
+    
+    return session_id
 
-# Usage
-@cache_result(ttl=1800, key_prefix="products")
-async def get_products(category: str):
-    # Expensive database query
-    return await db.query(Product).filter_by(category=category).all()
+async def get_session(session_id: str) -> dict | None:
+    session_key = f"session:{session_id}"
+    data = await redis_manager.get_async(session_key)
+    
+    if data:
+        return json.loads(data)
+    return None
 ```
 
-### 5. Distributed Locks
+## Connection Management
 
-Implement distributed locks for critical sections:
+### Health Check
+
+Test Redis connectivity:
 
 ```python
-from app.core.redis import redis_manager
-import asyncio
-
-async def acquire_lock(lock_name: str, timeout: int = 10):
-    """Acquire distributed lock"""
-    lock_key = f"lock:{lock_name}"
-    
-    # Try to set lock with NX (only if not exists)
-    client = await redis_manager.get_async_client()
-    acquired = await client.set(lock_key, "1", ex=timeout, nx=True)
-    
-    return acquired
-
-async def release_lock(lock_name: str):
-    """Release distributed lock"""
-    lock_key = f"lock:{lock_name}"
-    await redis_manager.delete_async(lock_key)
-
-# Usage
-async def process_payment(order_id: int):
-    lock_name = f"payment:{order_id}"
-    
-    if not await acquire_lock(lock_name):
-        raise Exception("Payment already being processed")
-    
+@router.get("/health/redis")
+async def redis_health():
     try:
-        # Process payment
-        await process_payment_logic(order_id)
-    finally:
-        await release_lock(lock_name)
+        await redis_manager.async_test_connection()
+        return {"status": "healthy"}
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e)}
 ```
 
-### 6. Cache Invalidation
+### Direct Client Access
 
-Invalidate cache by pattern:
+For advanced operations, access the Redis client directly:
 
 ```python
-from app.core.redis import redis_manager
+client = await redis_manager.get_async_client()
 
-async def invalidate_user_cache(user_id: int):
-    """Invalidate all cache entries for a user"""
-    pattern = f"user:{user_id}:*"
-    await redis_manager.delete_pattern_async(pattern)
-
-async def invalidate_all_users_cache():
-    """Invalidate all user cache entries"""
-    pattern = "user:*"
-    await redis_manager.delete_pattern_async(pattern)
-```
-
-## Environment Configuration
-
-### Development (`.env.development`)
-
-```ini
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-REDIS_DB=0
-REDIS_CONNECTION_URL=redis://localhost:6379/0
-REDIS_POOL_SIZE=10
-REDIS_SOCKET_TIMEOUT=5
-REDIS_DEFAULT_TTL=3600
-```
-
-### Production (`.env.production`)
-
-```ini
-REDIS_HOST=redis
-REDIS_PORT=6379
-REDIS_PASSWORD=your-strong-password
-REDIS_DB=0
-REDIS_CONNECTION_URL=redis://:your-strong-password@redis:6379/0
-REDIS_POOL_SIZE=20
-REDIS_SOCKET_TIMEOUT=5
-REDIS_DEFAULT_TTL=3600
+# Use Redis commands directly
+await client.hset("user:1", mapping={"name": "John", "email": "john@example.com"})
+user_data = await client.hgetall("user:1")
 ```
 
 ## Docker Setup
 
-When Docker is enabled, Redis is automatically included in `docker-compose.yml`:
+When Docker is enabled, Redis is included in `docker-compose.yml`:
 
 ```yaml
-services:
-  redis:
-    image: redis:7-alpine
-    container_name: ${PROJECT_NAME}_redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  redis_data:
+redis:
+  image: redis:7-alpine
+  container_name: my_project_redis
+  ports:
+    - "6379:6379"
+  restart: unless-stopped
+  networks:
+    - app-network
 ```
 
-## Testing Redis Connection
+The application service depends on Redis:
 
-Test Redis connection:
-
-```python
-from app.core.redis import redis_manager
-
-# Async test
-async def test_redis_async():
-    try:
-        success = await redis_manager.async_test_connection()
-        print(f"Redis async connection: {'✅ OK' if success else '❌ Failed'}")
-    except Exception as e:
-        print(f"Redis async connection failed: {e}")
-
-# Sync test
-def test_redis_sync():
-    try:
-        success = redis_manager.sync_test_connection()
-        print(f"Redis sync connection: {'✅ OK' if success else '❌ Failed'}")
-    except Exception as e:
-        print(f"Redis sync connection failed: {e}")
+```yaml
+app:
+  depends_on:
+    redis:
+      condition: service_started
+  environment:
+    - REDIS_CONNECTION_URL=redis://redis:6379
 ```
-
-## Best Practices
-
-### 1. Use Appropriate TTL
-
-Set reasonable expiration times:
-
-```python
-# Short-lived data (5 minutes)
-await redis_manager.set_async("temp_data", value, ex=300)
-
-# Medium-lived data (1 hour)
-await redis_manager.set_async("user_session", value, ex=3600)
-
-# Long-lived data (24 hours)
-await redis_manager.set_async("daily_stats", value, ex=86400)
-```
-
-### 2. Use Namespaced Keys
-
-Organize keys with prefixes:
-
-```python
-# Good - namespaced keys
-"user:123:profile"
-"user:123:settings"
-"product:456:details"
-"cache:api:users:list"
-
-# Bad - flat keys
-"123_profile"
-"user_settings"
-"product_456"
-```
-
-### 3. Handle Cache Misses Gracefully
-
-Always have a fallback:
-
-```python
-async def get_data(key: str):
-    # Try cache first
-    cached = await redis_manager.get_async(key)
-    if cached:
-        return json.loads(cached)
-    
-    # Fallback to database
-    data = await fetch_from_database(key)
-    
-    # Update cache
-    await redis_manager.set_async(key, json.dumps(data), ex=3600)
-    
-    return data
-```
-
-### 4. Avoid Cache Stampede
-
-Use locking to prevent multiple processes from regenerating the same cache:
-
-```python
-async def get_expensive_data(key: str):
-    cached = await redis_manager.get_async(key)
-    if cached:
-        return json.loads(cached)
-    
-    # Acquire lock
-    lock_key = f"lock:{key}"
-    client = await redis_manager.get_async_client()
-    
-    if await client.set(lock_key, "1", ex=10, nx=True):
-        try:
-            # Generate data
-            data = await expensive_operation()
-            await redis_manager.set_async(key, json.dumps(data), ex=3600)
-            return data
-        finally:
-            await redis_manager.delete_async(lock_key)
-    else:
-        # Wait for other process to finish
-        await asyncio.sleep(0.1)
-        return await get_expensive_data(key)
-```
-
-### 5. Monitor Memory Usage
-
-Redis stores data in memory, so monitor usage:
-
-```python
-async def get_redis_info():
-    """Get Redis memory info"""
-    client = await redis_manager.get_async_client()
-    info = await client.info("memory")
-    return {
-        "used_memory": info["used_memory_human"],
-        "used_memory_peak": info["used_memory_peak_human"],
-        "mem_fragmentation_ratio": info["mem_fragmentation_ratio"]
-    }
-```
-
-## Troubleshooting
-
-### Connection Refused
-
-```bash
-# Check if Redis is running
-redis-cli ping
-
-# Start Redis (macOS)
-brew services start redis
-
-# Start Redis (Linux)
-sudo systemctl start redis
-
-# Start Redis (Docker)
-docker-compose up redis
-```
-
-### Memory Issues
-
-```bash
-# Check memory usage
-redis-cli info memory
-
-# Clear all data (development only!)
-redis-cli FLUSHALL
-
-# Set max memory limit
-redis-cli CONFIG SET maxmemory 256mb
-redis-cli CONFIG SET maxmemory-policy allkeys-lru
-```
-
-### Slow Queries
-
-```bash
-# Monitor slow commands
-redis-cli --latency
-
-# Check slow log
-redis-cli SLOWLOG GET 10
-```
-
-## See Also
-
-- [Configuration Options](configuration.md) - Redis configuration
-- [Celery Background Tasks](celery-tasks.md) - Using Redis with Celery
-- [Deployment Guide](deployment.md) - Production Redis setup

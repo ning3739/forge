@@ -36,7 +36,7 @@ Forge is a powerful command-line tool that helps you quickly bootstrap productio
 ## 📋 Requirements
 
 - Python 3.9+
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+- [uv](https://docs.astral.sh/uv/) package manager
 
 ## 🚀 Quick Start
 
