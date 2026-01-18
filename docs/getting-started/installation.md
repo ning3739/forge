@@ -34,7 +34,6 @@ For development or to get the latest changes:
 ```bash
 git clone https://github.com/ning3739/forge.git
 cd forge
-uv sync
 uv build
 pip install dist/ningfastforge-*.whl
 ```
