@@ -67,13 +67,15 @@ RUN apt-get update && apt-get install -y \\
 
 '''
         
-        content += '''# Copy dependency files and alembic configuration
+        content += '''# Copy dependency files
 COPY pyproject.toml README.md alembic.ini ./
-COPY alembic ./alembic
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \\
     pip install --no-cache-dir -e .
+
+# Copy alembic configuration
+COPY alembic ./alembic
 
 '''
         return content
