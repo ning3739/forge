@@ -32,6 +32,7 @@ class MainGenerator(BaseTemplateGenerator):
             "from fastapi.openapi.utils import get_openapi",
             "from fastapi.middleware.cors import CORSMiddleware",
             "from fastapi.staticfiles import StaticFiles",
+            "from contextlib import asynccontextmanager",
             "",
             "from app.core.config.settings import settings",
             "from app.core.logger import logger_manager",
@@ -51,6 +52,7 @@ logger = logger_manager.get_logger(__name__)
 
 
 # Create lifespan
+@asynccontextmanager
 async def lifespan(_app: FastAPI):
     """Application lifespan management"""
     logger.info("🚩 Starting the application...")
